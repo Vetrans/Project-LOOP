@@ -30,7 +30,7 @@ export default function Signup() {
       <form onSubmit={handleSubmit} className="stack gap-4">
         {error && <ErrorState message={error} />}
         <div className="field">
-          <label className="u-label" htmlFor="name">
+          <label className="text-eyebrow" htmlFor="name">
             Your name
           </label>
           <input
@@ -43,7 +43,7 @@ export default function Signup() {
           />
         </div>
         <div className="field">
-          <label className="u-label" htmlFor="workspace">
+          <label className="text-eyebrow" htmlFor="workspace">
             Workspace / company name
           </label>
           <input
@@ -56,7 +56,7 @@ export default function Signup() {
           />
         </div>
         <div className="field">
-          <label className="u-label" htmlFor="email">
+          <label className="text-eyebrow" htmlFor="email">
             Work email
           </label>
           <input
@@ -70,7 +70,7 @@ export default function Signup() {
           />
         </div>
         <div className="field">
-          <label className="u-label" htmlFor="password">
+          <label className="text-eyebrow" htmlFor="password">
             Password
           </label>
           <input

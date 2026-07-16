@@ -90,7 +90,7 @@ export default function Inbox() {
         )}
       </header>
 
-      <div className="row gap-3" style={{ marginBottom: 16, flexWrap: "wrap" }}>
+      <div className="row-wrap gap-3 section-gap" style={{ marginBottom: 16 }}>
         <div className="input-icon-wrap">
           <Search size={15} />
           <input
@@ -117,7 +117,7 @@ export default function Inbox() {
         {loading ? (
           <div className="stack gap-3" style={{ padding: 20 }}>
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} style={{ height: 48, width: "100%" }} />
+              <Skeleton key={i} style={{ height: 46, width: "100%" }} />
             ))}
           </div>
         ) : items.length === 0 ? (
@@ -150,7 +150,7 @@ export default function Inbox() {
                   <td>
                     <button
                       onClick={() => cycleStatus(f)}
-                      style={{ background: "none", border: "none", padding: 0, cursor: can("manage_feedback") ? "pointer" : "default" }}
+                      className="status-toggle"
                       disabled={!can("manage_feedback")}
                       title={can("manage_feedback") ? "Click to advance status" : undefined}
                     >
@@ -168,7 +168,7 @@ export default function Inbox() {
 
         {!loading && items.length > 0 && (
           <div className="table-pagination">
-            <p className="u-mono u-muted" style={{ fontSize: 12 }}>
+            <p className="text-meta">
               Page {page} of {pages}
             </p>
             <div className="row gap-1">
@@ -231,7 +231,7 @@ function AddFeedbackModal({ open, onClose, onSubmit }) {
       <form onSubmit={handleSubmit} className="stack gap-4">
         {error && <ErrorState message={error} />}
         <div className="field">
-          <label className="u-label">Content</label>
+          <label className="text-eyebrow">Content</label>
           <textarea
             required
             rows={3}
@@ -241,9 +241,9 @@ function AddFeedbackModal({ open, onClose, onSubmit }) {
             onChange={(e) => setForm({ ...form, content: e.target.value })}
           />
         </div>
-        <div className="grid-2">
+        <div className="grid-two">
           <div className="field">
-            <label className="u-label">Channel</label>
+            <label className="text-eyebrow">Channel</label>
             <select className="input" value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })}>
               {CHANNELS.map((c) => (
                 <option key={c}>{c}</option>
@@ -251,7 +251,7 @@ function AddFeedbackModal({ open, onClose, onSubmit }) {
             </select>
           </div>
           <div className="field">
-            <label className="u-label">Customer</label>
+            <label className="text-eyebrow">Customer</label>
             <input
               className="input"
               placeholder="Optional"
@@ -260,9 +260,7 @@ function AddFeedbackModal({ open, onClose, onSubmit }) {
             />
           </div>
         </div>
-        <p className="u-mono u-muted" style={{ fontSize: 12 }}>
-          Sentiment and themes are filled in automatically once this item is submitted.
-        </p>
+        <p className="text-meta">Sentiment and themes are filled in automatically once this item is submitted.</p>
         <div className="row gap-2" style={{ justifyContent: "flex-end" }}>
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
             Cancel
@@ -317,39 +315,15 @@ function CsvImportModal({ open, onClose, onImported }) {
     >
       <div className="stack gap-4">
         {error && <ErrorState message={error} />}
-        <label
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            borderRadius: 8,
-            border: "1px dashed var(--ink-600)",
-            padding: "32px 16px",
-            textAlign: "center",
-            cursor: "pointer",
-          }}
-        >
-          <Upload size={20} className="u-muted" />
-          <span style={{ fontSize: 14, color: "var(--mist-300)" }}>{file?.name || "Click to choose a .csv file"}</span>
-          <span className="u-mono u-muted" style={{ fontSize: 11 }}>
-            content, channel, customer_label, created_at
-          </span>
-          <input type="file" accept=".csv" style={{ display: "none" }} onChange={handleFile} />
+        <label className="dropzone">
+          <Upload size={20} className="text-muted" />
+          <span className="dropzone-filename">{file?.name || "Click to choose a .csv file"}</span>
+          <span className="dropzone-hint">content, channel, customer_label, created_at</span>
+          <input type="file" accept=".csv" className="dropzone-input" onChange={handleFile} />
         </label>
 
         {result && (
-          <div
-            style={{
-              borderRadius: 8,
-              border: "1px solid rgba(45,217,185,0.3)",
-              background: "var(--teal-wash)",
-              padding: "10px 16px",
-              fontSize: 14,
-              color: "var(--teal)",
-            }}
-          >
+          <div className="result-banner">
             Imported {result.imported} rows · {result.failed} failed validation
           </div>
         )}

@@ -6,6 +6,18 @@ Architecture, roles, and features follow the original Project LOOP brief —
 implemented as plain React + hand-written CSS (no Tailwind, no CSS
 framework) to keep the build simple and dependency-light.
 
+## Design
+
+A color-graded near-black canvas (soft violet/teal/amber light sources,
+not a flat single accent), a faint film-grain texture, and tonal —
+never flat-saturated — accent fills. Type pairs **Fraunces** (an editorial
+serif, used sparingly for page titles, the wordmark, and the big numbers a
+person is meant to trust) against **Inter** for the actual interface, with
+**IBM Plex Mono** marking anything that's data — timestamps, counts,
+status. The signature mark is a deliberately unclosed ring with one dot
+slowly completing the orbit — LOOP's whole premise is closing the gap
+between scattered feedback and a decision.
+
 This is one part of the `loop/` monorepo:
 ```
 loop/
@@ -31,16 +43,16 @@ real rule in `src/styles/*.css`:
 
 | File | Covers |
 |---|---|
-| `variables.css` | Color tokens, fonts, radii, shadows (`--ink-*`, `--mist-*`, `--violet`, `--teal`, `--coral`, `--amber`) |
-| `base.css` | Reset, scrollbars, focus states, a few `.u-*` text helpers |
+| `variables.css` | Color tokens, gradients, fonts, radii, shadows |
+| `base.css` | Reset, grain texture, focus states, the `.text-*` type scale, shimmer skeleton |
 | `layout.css` | Sidebar, topbar, nav links, the app shell |
-| `components.css` | Buttons, inputs, panels, badges, tables, modal, empty/error/skeleton states, the small `.grid-*` / `.stack` / `.row` layout helpers used across pages |
+| `components.css` | Buttons, inputs, panels, badges, tables, modal, empty/error states, layout helpers (`.grid-*`, `.stack`, `.row`) |
+| `pages.css` | Page-specific patterns: Inbox's CSV dropzone, Trends' theme list & drill-down, Reports' cards, Settings' invite box |
 | `auth.css` | Login/signup page frame |
 | `chat.css` | Ask LOOP's chat bubbles and citations |
 
-To restyle the app, edit `variables.css` for global tokens, or the
-relevant component file for one piece — nothing is generated or compiled
-beyond a plain CSS `@import` chain from `src/index.css`.
+`src/components/LoopMark.jsx` holds the signature logo mark (shared by
+the sidebar and the auth screens) so it's defined once, not copy-pasted.
 
 ## What's included
 
@@ -103,9 +115,10 @@ npm run preview    # serve the production build locally
 
 ```
 src/
-  styles/            variables.css, base.css, layout.css, components.css, auth.css, chat.css
+  styles/            variables.css, base.css, layout.css, components.css, pages.css, auth.css, chat.css
   components/
     Layout.jsx         sidebar + topbar shell, role-aware nav
+    LoopMark.jsx         the signature logo mark (shared by sidebar + auth)
     RouteGuards.jsx     ProtectedRoute, RequirePermission
     ui.jsx               StatCard, Badge, Modal, EmptyState, Skeleton, etc.
     charts.jsx            Recharts wrappers (volume, sentiment, themes, trend)

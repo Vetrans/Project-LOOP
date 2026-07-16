@@ -44,7 +44,7 @@ export default function AskLoop() {
 
   return (
     <div className="chat-page">
-      <header style={{ marginBottom: 16 }}>
+      <header style={{ marginBottom: 18 }}>
         <h1 className="page-title">Ask LOOP</h1>
         <p className="page-subtitle">Grounded Q&amp;A — answers are cited to real feedback, never invented.</p>
       </header>
@@ -58,9 +58,7 @@ export default function AskLoop() {
             {thinking && (
               <div className="chat-thinking">
                 <Sparkles size={15} />
-                <span className="u-mono" style={{ fontSize: 12 }}>
-                  Retrieving relevant feedback…
-                </span>
+                <span className="text-meta">Retrieving relevant feedback…</span>
               </div>
             )}
             <div ref={endRef} />

@@ -73,7 +73,7 @@ export default function Settings() {
         {loading ? (
           <div className="stack gap-3" style={{ padding: 20 }}>
             {[...Array(3)].map((_, i) => (
-              <Skeleton key={i} style={{ height: 40, width: "100%" }} />
+              <Skeleton key={i} style={{ height: 38, width: "100%" }} />
             ))}
           </div>
         ) : (
@@ -111,7 +111,7 @@ export default function Settings() {
         )}
       </div>
 
-      <div className="row gap-2" style={{ marginTop: 16 }}>
+      <div className="role-legend">
         {ROLES.map((r) => (
           <Badge key={r} tone={ROLE_TONE[r]}>
             {r}
@@ -129,24 +129,11 @@ export default function Settings() {
       >
         {invited ? (
           <div className="stack gap-3">
-            <p style={{ fontSize: 14, color: "var(--mist-300)" }}>
-              Account created for <span style={{ color: "var(--mist-100)" }}>{invited.member.email}</span>. LOOP
-              doesn't send invite emails (out of scope) — share this temporary password with them directly:
+            <p className="invite-lead">
+              Account created for <strong>{invited.member.email}</strong>. LOOP doesn't send invite emails (out of
+              scope) — share this temporary password with them directly:
             </p>
-            <p
-              className="u-mono"
-              style={{
-                borderRadius: 8,
-                border: "1px solid rgba(45,217,185,0.3)",
-                background: "var(--teal-wash)",
-                padding: "10px 16px",
-                textAlign: "center",
-                fontSize: 14,
-                color: "var(--teal)",
-              }}
-            >
-              {invited.tempPassword}
-            </p>
+            <p className="invite-success-box">{invited.tempPassword}</p>
             <button
               className="btn btn-secondary"
               style={{ alignSelf: "flex-end" }}
@@ -161,7 +148,7 @@ export default function Settings() {
         ) : (
           <form onSubmit={invite} className="stack gap-4">
             <div className="field">
-              <label className="u-label">Email</label>
+              <label className="text-eyebrow">Email</label>
               <input
                 type="email"
                 required
@@ -172,7 +159,7 @@ export default function Settings() {
               />
             </div>
             <div className="field">
-              <label className="u-label">Role</label>
+              <label className="text-eyebrow">Role</label>
               <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
                 {ROLES.map((r) => (
                   <option key={r}>{r}</option>

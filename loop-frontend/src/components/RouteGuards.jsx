@@ -6,7 +6,7 @@ export function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="status-page">
-        <p className="u-muted">Loading…</p>
+        <p className="text-muted">Loading…</p>
       </div>
     );
   }

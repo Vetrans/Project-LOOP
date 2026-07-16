@@ -3,7 +3,7 @@ import { AlertCircle, Inbox } from "lucide-react";
 export function StatCard({ label, value, sub, accent = "violet" }) {
   return (
     <div className="panel panel-pad">
-      <p className="u-label">{label}</p>
+      <p className="text-eyebrow">{label}</p>
       <p className={`stat-card-value accent-${accent}`}>{value}</p>
       {sub && <p className="stat-card-sub">{sub}</p>}
     </div>
@@ -20,11 +20,7 @@ const TONE_CLASS = {
 };
 
 export function Badge({ children, tone = "neutral" }) {
-  return (
-    <span className={`badge ${TONE_CLASS[tone] ?? TONE_CLASS.neutral}`}>
-      {children}
-    </span>
-  );
+  return <span className={`badge ${TONE_CLASS[tone] ?? TONE_CLASS.neutral}`}>{children}</span>;
 }
 
 export function SentimentBadge({ sentiment }) {
@@ -46,7 +42,7 @@ export function EmptyState({ title, description, icon: Icon = Inbox, action }) {
   return (
     <div className="empty-state">
       <div className="empty-state-icon">
-        <Icon size={22} />
+        <Icon size={21} />
       </div>
       <p className="empty-state-title">{title}</p>
       {description && <p className="empty-state-desc">{description}</p>}
@@ -58,7 +54,7 @@ export function EmptyState({ title, description, icon: Icon = Inbox, action }) {
 export function ErrorState({ message }) {
   return (
     <div className="error-state">
-      <AlertCircle size={16} />
+      <AlertCircle size={15} />
       {message}
     </div>
   );
@@ -81,11 +77,7 @@ export function Modal({ open, onClose, title, children, footer }) {
       >
         <div className="modal-header">
           <h3 className="modal-title">{title}</h3>
-          <button
-            className="btn btn-ghost btn-icon"
-            onClick={onClose}
-            aria-label="Close"
-          >
+          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
             ✕
           </button>
         </div>

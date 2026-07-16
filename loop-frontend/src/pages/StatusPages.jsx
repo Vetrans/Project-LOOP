@@ -25,13 +25,11 @@ function StatusPage({ icon: Icon, title, description }) {
   return (
     <div className="status-page">
       <div className="status-page-icon">
-        <Icon size={26} />
+        <Icon size={24} />
       </div>
-      <h1 style={{ fontSize: 20, fontWeight: 700, color: "var(--mist-100)" }}>{title}</h1>
-      <p className="u-muted" style={{ maxWidth: 360, fontSize: 14 }}>
-        {description}
-      </p>
-      <Link to="/" className="btn btn-primary" style={{ marginTop: 12 }}>
+      <h1 className="status-page-title">{title}</h1>
+      <p className="status-page-desc">{description}</p>
+      <Link to="/" className="btn btn-primary section-gap">
         Back to dashboard
       </Link>
     </div>

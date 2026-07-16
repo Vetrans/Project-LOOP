@@ -30,7 +30,7 @@ export default function Login() {
       <form onSubmit={handleSubmit} className="stack gap-4">
         {error && <ErrorState message={error} />}
         <div className="field">
-          <label className="u-label" htmlFor="email">
+          <label className="text-eyebrow" htmlFor="email">
             Work email
           </label>
           <input
@@ -44,7 +44,7 @@ export default function Login() {
           />
         </div>
         <div className="field">
-          <label className="u-label" htmlFor="password">
+          <label className="text-eyebrow" htmlFor="password">
             Password
           </label>
           <input
@@ -65,8 +65,9 @@ export default function Login() {
         New to LOOP? <Link to="/signup">Create a workspace</Link>
       </p>
       <p className="auth-hint">
-        Seeded demo logins: admin@acme-demo.com / analyst@acme-demo.com / viewer@acme-demo.com — password
-        Password123!
+        Seeded demo logins — admin@acme-demo.com · analyst@acme-demo.com · viewer@acme-demo.com
+        <br />
+        password: Password123!
       </p>
     </AuthShell>
   );

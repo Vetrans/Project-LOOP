@@ -50,7 +50,7 @@ export default function Trends() {
 
   return (
     <div>
-      <header style={{ marginBottom: 24 }}>
+      <header style={{ marginBottom: 28 }}>
         <h1 className="page-title">Theme trends</h1>
         <p className="page-subtitle">What's growing, what's fading, and which themes need attention this week.</p>
       </header>
@@ -59,11 +59,13 @@ export default function Trends() {
 
       <div className="grid-trends">
         <div className="panel panel-pad">
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--mist-100)", marginBottom: 12 }}>All themes</h2>
+          <div className="panel-header">
+            <h2 className="panel-heading">All themes</h2>
+          </div>
           {loading ? (
             <div className="stack gap-2">
               {[...Array(4)].map((_, i) => (
-                <Skeleton key={i} style={{ height: 40, width: "100%" }} />
+                <Skeleton key={i} style={{ height: 38, width: "100%" }} />
               ))}
             </div>
           ) : themes.length === 0 ? (
@@ -75,30 +77,14 @@ export default function Trends() {
                 const isSelected = selected?._id === theme._id;
                 return (
                   <li key={theme._id}>
-                    <button
-                      onClick={() => setSelected(theme)}
-                      className="row-between"
-                      style={{
-                        width: "100%",
-                        background: isSelected ? "var(--violet-wash)" : "transparent",
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "10px 12px",
-                        textAlign: "left",
-                      }}
-                    >
+                    <button onClick={() => setSelected(theme)} className={`theme-row${isSelected ? " selected" : ""}`}>
                       <span className="row gap-2">
-                        <span style={{ width: 8, height: 8, borderRadius: 999, background: theme.color, display: "inline-block" }} />
-                        <span style={{ fontSize: 14, color: "var(--mist-100)" }}>{theme.name}</span>
+                        <span className="theme-swatch" style={{ background: theme.color }} />
+                        <span className="theme-name">{theme.name}</span>
                       </span>
                       <span className="row gap-3">
-                        <span className="u-mono u-muted" style={{ fontSize: 12 }}>
-                          {theme.count}
-                        </span>
-                        <span
-                          className="row gap-1 u-mono"
-                          style={{ fontSize: 12, color: trend >= 0 ? "var(--coral)" : "var(--teal)" }}
-                        >
+                        <span className="theme-count">{theme.count}</span>
+                        <span className={`theme-trend ${trend >= 0 ? "up" : "down"}`}>
                           {trend >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                           {Math.abs(trend)}%
                         </span>
@@ -112,14 +98,12 @@ export default function Trends() {
         </div>
 
         <div className="panel panel-pad">
-          <div className="row-between" style={{ marginBottom: 8 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--mist-100)" }}>Volume vs. previous period</h2>
-            <span className="u-mono u-muted" style={{ fontSize: 11 }}>
-              6-week view
-            </span>
+          <div className="panel-header">
+            <h2 className="panel-heading">Volume vs. previous period</h2>
+            <span className="text-meta">6-week view</span>
           </div>
           {loading ? (
-            <Skeleton style={{ height: 256, width: "100%" }} />
+            <Skeleton style={{ height: 250, width: "100%" }} />
           ) : chartData.length === 0 ? (
             <EmptyState title="Not enough data yet" description="Trend lines appear once feedback spans a few weeks." />
           ) : (
@@ -128,10 +112,12 @@ export default function Trends() {
         </div>
       </div>
 
-      <div className="panel panel-pad" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--mist-100)", marginBottom: 12 }}>
-          {selected ? `Feedback tagged "${selected.name}"` : "Select a theme to drill in"}
-        </h2>
+      <div className="panel panel-pad section-gap">
+        <div className="panel-header">
+          <h2 className="panel-heading">
+            {selected ? `Feedback tagged "${selected.name}"` : "Select a theme to drill in"}
+          </h2>
+        </div>
         {!selected ? (
           <EmptyState
             title="No theme selected"
@@ -174,7 +160,7 @@ function DrillDown({ themeId }) {
     return (
       <div className="stack gap-3">
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} style={{ height: 48, width: "100%" }} />
+          <Skeleton key={i} style={{ height: 44, width: "100%" }} />
         ))}
       </div>
     );
@@ -184,10 +170,10 @@ function DrillDown({ themeId }) {
   }
   return (
     <ul>
-      {items.map((f, i) => (
-        <li key={f._id} style={{ padding: "12px 0", borderTop: i === 0 ? "none" : "1px solid var(--ink-800)" }}>
-          <p style={{ fontSize: 14, color: "var(--mist-100)" }}>{f.content}</p>
-          <p className="u-mono u-muted" style={{ fontSize: 12, marginTop: 4 }}>
+      {items.map((f) => (
+        <li key={f._id} className="drill-item">
+          <p className="drill-item-text">{f.content}</p>
+          <p className="drill-item-meta">
             {f.channel} · {f.customerLabel}
           </p>
         </li>

@@ -34,7 +34,7 @@ export default function Dashboard() {
     <div>
       <header className="page-header">
         <div>
-          <p className="u-label">{user?.workspace?.name}</p>
+          <p className="text-eyebrow">{user?.workspace?.name}</p>
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">The shape of your feedback this period, at a glance.</p>
         </div>
@@ -42,44 +42,40 @@ export default function Dashboard() {
 
       {error && <ErrorState message={error} />}
 
-      <div className="grid-3">
+      <div className="grid-stats">
         <StatCard label="Total feedback" value={loading ? "—" : (stats?.totalItems ?? 0).toLocaleString()} accent="violet" />
         <StatCard label="% negative" value={loading ? "—" : `${stats?.pctNegative ?? 0}%`} sub="All time" accent="coral" />
         <StatCard label="New this week" value={loading ? "—" : `+${stats?.newThisWeek ?? 0}`} sub="Last 7 days" accent="teal" />
       </div>
 
-      <div className="grid-dashboard-charts" style={{ marginTop: 16 }}>
+      <div className="grid-dashboard-charts section-gap">
         <div className="panel panel-pad">
-          <div className="row-between" style={{ marginBottom: 8 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--mist-100)" }}>Volume over time</h2>
-            <span className="u-mono" style={{ fontSize: 11, color: "var(--mist-400)" }}>
-              weekly · last 8 weeks
-            </span>
+          <div className="panel-header">
+            <h2 className="panel-heading">Volume over time</h2>
+            <span className="text-meta">weekly · last 8 weeks</span>
           </div>
-          {loading ? <Skeleton style={{ height: 224, width: "100%" }} /> : <VolumeChart data={stats?.volume ?? []} />}
+          {loading ? <Skeleton style={{ height: 220, width: "100%" }} /> : <VolumeChart data={stats?.volume ?? []} />}
         </div>
 
         <div className="panel panel-pad">
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--mist-100)", marginBottom: 8 }}>
-            Sentiment breakdown
-          </h2>
-          {loading ? <Skeleton style={{ height: 224, width: "100%" }} /> : <SentimentDonut data={stats?.sentiment ?? []} />}
+          <div className="panel-header">
+            <h2 className="panel-heading">Sentiment breakdown</h2>
+          </div>
+          {loading ? <Skeleton style={{ height: 220, width: "100%" }} /> : <SentimentDonut data={stats?.sentiment ?? []} />}
         </div>
       </div>
 
-      <div className="panel panel-pad" style={{ marginTop: 16 }}>
-        <div className="row-between" style={{ marginBottom: 8 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--mist-100)" }}>Top themes</h2>
-          <Link to="/trends" className="row gap-1" style={{ fontSize: 12, color: "var(--violet)", textDecoration: "none" }}>
+      <div className="panel panel-pad section-gap">
+        <div className="panel-header">
+          <h2 className="panel-heading">Top themes</h2>
+          <Link to="/trends" className="link-quiet">
             View trends <ArrowUpRight size={13} />
           </Link>
         </div>
         {loading ? (
-          <Skeleton style={{ height: 224, width: "100%" }} />
+          <Skeleton style={{ height: 220, width: "100%" }} />
         ) : themes.length === 0 ? (
-          <p className="u-muted" style={{ padding: "32px 0", textAlign: "center", fontSize: 14 }}>
-            No themes yet — add or import feedback to see it clustered here.
-          </p>
+          <p className="panel-empty-note">No themes yet — add or import feedback to see it clustered here.</p>
         ) : (
           <ThemesBarChart data={themes} />
         )}
