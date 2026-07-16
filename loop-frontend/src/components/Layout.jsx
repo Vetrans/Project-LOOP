@@ -12,12 +12,12 @@ import { useAuth } from "../context/AuthContext";
 import LoopMark from "./LoopMark";
 
 const NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/inbox", label: "Inbox", icon: InboxIcon },
-  { to: "/trends", label: "Trends", icon: TrendingUp },
-  { to: "/ask", label: "Ask LOOP", icon: MessagesSquare },
-  { to: "/reports", label: "Reports", icon: FileText },
-  { to: "/settings", label: "Members", icon: Users, permission: "manage_members" },
+  { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/app/inbox", label: "Inbox", icon: InboxIcon },
+  { to: "/app/trends", label: "Trends", icon: TrendingUp },
+  { to: "/app/ask", label: "Ask LOOP", icon: MessagesSquare },
+  { to: "/app/reports", label: "Reports", icon: FileText },
+  { to: "/app/settings", label: "Members", icon: Users, permission: "manage_members" },
 ];
 
 export default function Layout() {

@@ -29,7 +29,7 @@ function StatusPage({ icon: Icon, title, description }) {
       </div>
       <h1 className="status-page-title">{title}</h1>
       <p className="status-page-desc">{description}</p>
-      <Link to="/" className="btn btn-primary section-gap">
+      <Link to="/app" className="btn btn-primary section-gap">
         Back to dashboard
       </Link>
     </div>

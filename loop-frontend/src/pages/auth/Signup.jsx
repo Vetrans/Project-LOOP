@@ -17,7 +17,7 @@ export default function Signup() {
     setSubmitting(true);
     try {
       await signup(form);
-      navigate("/");
+      navigate("/app");
     } catch (err) {
       setError(err?.response?.data?.message || "Couldn't create your workspace. Try again.");
     } finally {

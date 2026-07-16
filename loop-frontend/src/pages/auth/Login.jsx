@@ -17,7 +17,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(form.email, form.password);
-      navigate("/");
+      navigate("/app");
     } catch (err) {
       setError(err?.response?.data?.message || "Couldn't sign you in. Check your details and try again.");
     } finally {
