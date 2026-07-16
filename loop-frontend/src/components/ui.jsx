@@ -20,7 +20,11 @@ const TONE_CLASS = {
 };
 
 export function Badge({ children, tone = "neutral" }) {
-  return <span className={`badge ${TONE_CLASS[tone] ?? TONE_CLASS.neutral}`}>{children}</span>;
+  return (
+    <span className={`badge ${TONE_CLASS[tone] ?? TONE_CLASS.neutral}`}>
+      {children}
+    </span>
+  );
 }
 
 export function SentimentBadge({ sentiment }) {
@@ -77,7 +81,11 @@ export function Modal({ open, onClose, title, children, footer }) {
       >
         <div className="modal-header">
           <h3 className="modal-title">{title}</h3>
-          <button className="btn btn-ghost btn-icon" onClick={onClose} aria-label="Close">
+          <button
+            className="btn btn-ghost btn-icon"
+            onClick={onClose}
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>

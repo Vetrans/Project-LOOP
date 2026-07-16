@@ -1,7 +1,9 @@
 import { AppError } from "../utils/AppError.js";
 
 export function notFoundHandler(req, res) {
-  res.status(404).json({ message: `No route for ${req.method} ${req.originalUrl}` });
+  res
+    .status(404)
+    .json({ message: `No route for ${req.method} ${req.originalUrl}` });
 }
 
 export function errorHandler(err, req, res, next) {
@@ -12,7 +14,10 @@ export function errorHandler(err, req, res, next) {
   if (err.name === "ZodError") {
     return res.status(422).json({
       message: "Validation failed.",
-      issues: err.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+      issues: err.issues.map((i) => ({
+        path: i.path.join("."),
+        message: i.message,
+      })),
     });
   }
 

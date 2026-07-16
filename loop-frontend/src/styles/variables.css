@@ -33,6 +33,9 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
-  --shadow-panel: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px -12px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 0 1px rgba(124, 111, 240, 0.35), 0 0 24px -4px rgba(124, 111, 240, 0.45);
+  --shadow-panel:
+    0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --shadow-glow:
+    0 0 0 1px rgba(124, 111, 240, 0.35), 0 0 24px -4px rgba(124, 111, 240, 0.45);
 }

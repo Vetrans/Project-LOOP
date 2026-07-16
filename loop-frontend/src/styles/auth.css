@@ -6,7 +6,11 @@
   justify-content: center;
   padding: 16px;
   background-color: var(--ink-950);
-  background-image: radial-gradient(circle at 30% 20%, rgba(124, 111, 240, 0.18), transparent 55%);
+  background-image: radial-gradient(
+    circle at 30% 20%,
+    rgba(124, 111, 240, 0.18),
+    transparent 55%
+  );
 }
 .auth-shell-inner {
   width: 100%;

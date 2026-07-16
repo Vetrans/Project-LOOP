@@ -12,11 +12,20 @@ import { classifyFeedback } from "../utils/ai.js";
 import { embedText } from "../utils/embeddings.js";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 router.use(requireAuth);
 
-const CHANNELS = ["Support ticket", "App store review", "NPS survey", "Sales call note", "Community post"];
+const CHANNELS = [
+  "Support ticket",
+  "App store review",
+  "NPS survey",
+  "Sales call note",
+  "Community post",
+];
 
 /* GET /api/feedback/stats — powers the Analytics Dashboard (C5): total
  * items, % negative, new this week, weekly volume, and sentiment split.
@@ -29,21 +38,28 @@ router.get(
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const eightWeeksAgo = new Date(now.getTime() - 8 * 7 * 24 * 60 * 60 * 1000);
 
-    const [totalItems, negCount, newThisWeek, sentimentAgg, volumeAgg] = await Promise.all([
-      Feedback.countDocuments({ workspaceId }),
-      Feedback.countDocuments({ workspaceId, sentiment: "NEG" }),
-      Feedback.countDocuments({ workspaceId, createdAt: { $gte: weekAgo } }),
-      Feedback.aggregate([{ $match: { workspaceId } }, { $group: { _id: "$sentiment", count: { $sum: 1 } } }]),
-      Feedback.aggregate([
-        { $match: { workspaceId, createdAt: { $gte: eightWeeksAgo } } },
-        { $group: { _id: { $isoWeek: "$createdAt" }, count: { $sum: 1 } } },
-        { $sort: { _id: 1 } },
-      ]),
-    ]);
+    const [totalItems, negCount, newThisWeek, sentimentAgg, volumeAgg] =
+      await Promise.all([
+        Feedback.countDocuments({ workspaceId }),
+        Feedback.countDocuments({ workspaceId, sentiment: "NEG" }),
+        Feedback.countDocuments({ workspaceId, createdAt: { $gte: weekAgo } }),
+        Feedback.aggregate([
+          { $match: { workspaceId } },
+          { $group: { _id: "$sentiment", count: { $sum: 1 } } },
+        ]),
+        Feedback.aggregate([
+          { $match: { workspaceId, createdAt: { $gte: eightWeeksAgo } } },
+          { $group: { _id: { $isoWeek: "$createdAt" }, count: { $sum: 1 } } },
+          { $sort: { _id: 1 } },
+        ]),
+      ]);
 
-    const pctNegative = totalItems ? Math.round((negCount / totalItems) * 100) : 0;
+    const pctNegative = totalItems
+      ? Math.round((negCount / totalItems) * 100)
+      : 0;
     const sentimentMap = { POS: 0, NEU: 0, NEG: 0 };
-    for (const row of sentimentAgg) if (row._id) sentimentMap[row._id] = row.count;
+    for (const row of sentimentAgg)
+      if (row._id) sentimentMap[row._id] = row.count;
 
     res.json({
       totalItems,
@@ -56,7 +72,7 @@ router.get(
       ],
       volume: volumeAgg.map((v) => ({ date: `W${v._id}`, volume: v.count })),
     });
-  })
+  }),
 );
 
 // Resolves theme name strings to Theme docs within the caller's
@@ -73,8 +89,13 @@ async function resolveThemeLinks(workspaceId, themeNames) {
 }
 
 async function classifyAndSave(doc, workspaceId) {
-  const existingThemes = await Theme.find({ workspaceId }).select("name").lean();
-  const result = classifyFeedback(doc.content, existingThemes.map((t) => t.name));
+  const existingThemes = await Theme.find({ workspaceId })
+    .select("name")
+    .lean();
+  const result = classifyFeedback(
+    doc.content,
+    existingThemes.map((t) => t.name),
+  );
 
   doc.sentiment = result.sentiment;
   doc.sentimentScore = result.sentimentScore;
@@ -90,7 +111,15 @@ async function classifyAndSave(doc, workspaceId) {
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const { search = "", channel = "", sentiment = "", status = "", theme = "", page = 1, limit = 20 } = req.query;
+    const {
+      search = "",
+      channel = "",
+      sentiment = "",
+      status = "",
+      theme = "",
+      page = 1,
+      limit = 20,
+    } = req.query;
     const filter = { workspaceId: req.user.workspaceId };
     if (search) filter.$text = { $search: search };
     if (channel) filter.channel = channel;
@@ -111,8 +140,13 @@ router.get(
       Feedback.countDocuments(filter),
     ]);
 
-    res.json({ items, total, page: pageNum, pages: Math.ceil(total / limitNum) });
-  })
+    res.json({
+      items,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+    });
+  }),
 );
 
 const createSchema = z.object({
@@ -127,10 +161,14 @@ router.post(
   requireRole("ADMIN", "ANALYST"),
   asyncHandler(async (req, res) => {
     const data = createSchema.parse(req.body);
-    let doc = await Feedback.create({ ...data, workspaceId: req.user.workspaceId, status: "NEW" });
+    let doc = await Feedback.create({
+      ...data,
+      workspaceId: req.user.workspaceId,
+      status: "NEW",
+    });
     doc = await classifyAndSave(doc, req.user.workspaceId);
     res.status(201).json(doc);
-  })
+  }),
 );
 
 /* POST /api/feedback/import — CSV bulk upload (brief columns: content, channel, customer_label, created_at) */
@@ -157,7 +195,9 @@ router.post(
           .extend({ channel: z.string() }) // validate loosely, then normalize below
           .parse({
             content: row.content,
-            channel: CHANNELS.includes(row.channel) ? row.channel : "Community post",
+            channel: CHANNELS.includes(row.channel)
+              ? row.channel
+              : "Community post",
             customerLabel: row.customer_label || "",
           });
 
@@ -176,10 +216,12 @@ router.post(
     }
 
     res.status(201).json({ imported, failed, errors: errors.slice(0, 10) });
-  })
+  }),
 );
 
-const statusSchema = z.object({ status: z.enum(["NEW", "REVIEWED", "ACTIONED"]) });
+const statusSchema = z.object({
+  status: z.enum(["NEW", "REVIEWED", "ACTIONED"]),
+});
 
 /* PATCH /api/feedback/:id/status */
 router.patch(
@@ -190,11 +232,11 @@ router.patch(
     const doc = await Feedback.findOneAndUpdate(
       { _id: req.params.id, workspaceId: req.user.workspaceId },
       { status },
-      { new: true }
+      { new: true },
     );
     if (!doc) throw new AppError("Feedback item not found.", 404);
     res.json(doc);
-  })
+  }),
 );
 
 /* POST /api/feedback/:id/reclassify — manual re-classify (AI1 acceptance criteria) */
@@ -202,11 +244,14 @@ router.post(
   "/:id/reclassify",
   requireRole("ADMIN", "ANALYST"),
   asyncHandler(async (req, res) => {
-    const doc = await Feedback.findOne({ _id: req.params.id, workspaceId: req.user.workspaceId });
+    const doc = await Feedback.findOne({
+      _id: req.params.id,
+      workspaceId: req.user.workspaceId,
+    });
     if (!doc) throw new AppError("Feedback item not found.", 404);
     await classifyAndSave(doc, req.user.workspaceId);
     res.json(doc);
-  })
+  }),
 );
 
 export default router;

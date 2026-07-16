@@ -12,8 +12,29 @@
 const DIMENSIONS = 256;
 
 const STOPWORDS = new Set([
-  "the", "a", "an", "is", "are", "was", "were", "to", "of", "and", "in", "on",
-  "for", "it", "this", "that", "i", "we", "you", "they", "with", "my", "our",
+  "the",
+  "a",
+  "an",
+  "is",
+  "are",
+  "was",
+  "were",
+  "to",
+  "of",
+  "and",
+  "in",
+  "on",
+  "for",
+  "it",
+  "this",
+  "that",
+  "i",
+  "we",
+  "you",
+  "they",
+  "with",
+  "my",
+  "our",
 ]);
 
 function tokenize(text) {
@@ -52,7 +73,10 @@ export function cosineSimilarity(a, b) {
 // explicitly since the schema marks it select:false by default).
 export function topKSimilar(questionVector, docs, k = 5) {
   return docs
-    .map((doc) => ({ doc, score: cosineSimilarity(questionVector, doc.embedding || []) }))
+    .map((doc) => ({
+      doc,
+      score: cosineSimilarity(questionVector, doc.embedding || []),
+    }))
     .sort((a, b) => b.score - a.score)
     .slice(0, k)
     .filter((r) => r.score > 0)

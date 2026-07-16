@@ -7,7 +7,12 @@ export function requireRole(...allowed) {
   return (req, res, next) => {
     if (!req.user) return next(new AppError("Not authenticated.", 401));
     if (!allowed.includes(req.user.role)) {
-      return next(new AppError(`This action requires one of these roles: ${allowed.join(", ")}.`, 403));
+      return next(
+        new AppError(
+          `This action requires one of these roles: ${allowed.join(", ")}.`,
+          403,
+        ),
+      );
     }
     next();
   };

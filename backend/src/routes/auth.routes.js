@@ -38,20 +38,35 @@ router.post(
     const { name, workspace, email, password } = signupSchema.parse(req.body);
 
     const existing = await User.findOne({ email: email.toLowerCase() });
-    if (existing) throw new AppError("An account with that email already exists.", 409);
+    if (existing)
+      throw new AppError("An account with that email already exists.", 409);
 
     let slug = slugify(workspace);
-    if (await Workspace.findOne({ slug })) slug = `${slug}-${Date.now().toString(36)}`;
+    if (await Workspace.findOne({ slug }))
+      slug = `${slug}-${Date.now().toString(36)}`;
 
     const ws = await Workspace.create({ name: workspace, slug });
 
-    const user = new User({ name, email: email.toLowerCase(), role: "ADMIN", workspaceId: ws._id });
+    const user = new User({
+      name,
+      email: email.toLowerCase(),
+      role: "ADMIN",
+      workspaceId: ws._id,
+    });
     await user.setPassword(password);
     await user.save();
 
     const token = signToken(user);
-    res.status(201).json({ token, user: { ...user.toSafeJSON(), workspace: { id: ws._id, name: ws.name } } });
-  })
+    res
+      .status(201)
+      .json({
+        token,
+        user: {
+          ...user.toSafeJSON(),
+          workspace: { id: ws._id, name: ws.name },
+        },
+      });
+  }),
 );
 
 const loginSchema = z.object({
@@ -71,8 +86,11 @@ router.post(
 
     const ws = await Workspace.findById(user.workspaceId);
     const token = signToken(user);
-    res.json({ token, user: { ...user.toSafeJSON(), workspace: { id: ws._id, name: ws.name } } });
-  })
+    res.json({
+      token,
+      user: { ...user.toSafeJSON(), workspace: { id: ws._id, name: ws.name } },
+    });
+  }),
 );
 
 router.get(
@@ -81,8 +99,11 @@ router.get(
   asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id);
     const ws = await Workspace.findById(req.user.workspaceId);
-    res.json({ ...user.toSafeJSON(), workspace: { id: ws._id, name: ws.name } });
-  })
+    res.json({
+      ...user.toSafeJSON(),
+      workspace: { id: ws._id, name: ws.name },
+    });
+  }),
 );
 
 // Stateless JWTs — logout is handled client-side by discarding the

@@ -6,7 +6,9 @@ import { asyncHandler, AppError } from "../utils/AppError.js";
 const router = Router();
 router.use(requireAuth);
 
-const askSchema = z.object({ question: z.string().min(3, "Ask a fuller question.") });
+const askSchema = z.object({
+  question: z.string().min(3, "Ask a fuller question."),
+});
 
 // Ask LOOP (AI3) is the ONE place this app calls the Anthropic API, and it
 // happens in the Python ai-service, not here. This route's only job is to
@@ -29,16 +31,19 @@ router.post(
     } catch (err) {
       throw new AppError(
         `Couldn't reach the AI service at ${base}. Is ai-service running (see ai-service/README section)?`,
-        503
+        503,
       );
     }
 
     const body = await upstream.json().catch(() => ({}));
     if (!upstream.ok) {
-      throw new AppError(body.detail || "The AI service returned an error.", upstream.status);
+      throw new AppError(
+        body.detail || "The AI service returned an error.",
+        upstream.status,
+      );
     }
     res.json(body);
-  })
+  }),
 );
 
 export default router;

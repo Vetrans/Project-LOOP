@@ -15,18 +15,23 @@ router.use(requireAuth);
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const reports = await Report.find({ workspaceId: req.user.workspaceId }).sort({ createdAt: -1 }).lean();
+    const reports = await Report.find({ workspaceId: req.user.workspaceId })
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(reports);
-  })
+  }),
 );
 
 router.get(
   "/:id",
   asyncHandler(async (req, res) => {
-    const report = await Report.findOne({ _id: req.params.id, workspaceId: req.user.workspaceId });
+    const report = await Report.findOne({
+      _id: req.params.id,
+      workspaceId: req.user.workspaceId,
+    });
     if (!report) throw new AppError("Report not found.", 404);
     res.json(report);
-  })
+  }),
 );
 
 const generateSchema = z.object({
@@ -43,22 +48,36 @@ router.post(
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
 
     const periodEnd = new Date();
-    const periodStart = new Date(periodEnd.getTime() - days * 24 * 60 * 60 * 1000);
-    const prevStart = new Date(periodStart.getTime() - days * 24 * 60 * 60 * 1000);
+    const periodStart = new Date(
+      periodEnd.getTime() - days * 24 * 60 * 60 * 1000,
+    );
+    const prevStart = new Date(
+      periodStart.getTime() - days * 24 * 60 * 60 * 1000,
+    );
 
     const [current, previous] = await Promise.all([
-      Feedback.find({ workspaceId, createdAt: { $gte: periodStart, $lte: periodEnd } })
+      Feedback.find({
+        workspaceId,
+        createdAt: { $gte: periodStart, $lte: periodEnd },
+      })
         .populate("themes.themeId", "name")
         .lean(),
-      Feedback.find({ workspaceId, createdAt: { $gte: prevStart, $lt: periodStart } }).lean(),
+      Feedback.find({
+        workspaceId,
+        createdAt: { $gte: prevStart, $lt: periodStart },
+      }).lean(),
     ]);
 
     const totalItems = current.length;
     const negCount = current.filter((f) => f.sentiment === "NEG").length;
-    const pctNegative = totalItems ? Math.round((negCount / totalItems) * 100) : 0;
+    const pctNegative = totalItems
+      ? Math.round((negCount / totalItems) * 100)
+      : 0;
 
     const prevNeg = previous.filter((f) => f.sentiment === "NEG").length;
-    const prevPct = previous.length ? Math.round((prevNeg / previous.length) * 100) : 0;
+    const prevPct = previous.length
+      ? Math.round((prevNeg / previous.length) * 100)
+      : 0;
     const sentimentDelta = pctNegative - prevPct;
 
     const themeCounts = new Map();
@@ -77,9 +96,19 @@ router.post(
     const sampleQuotes = current
       .filter((f) => f.sentiment === "NEG" || f.sentiment === "POS")
       .slice(0, 5)
-      .map((f) => ({ content: f.content, channel: f.channel, customerLabel: f.customerLabel }));
+      .map((f) => ({
+        content: f.content,
+        channel: f.channel,
+        customerLabel: f.customerLabel,
+      }));
 
-    const stats = { totalItems, pctNegative, sentimentDelta, topThemes, sampleQuotes };
+    const stats = {
+      totalItems,
+      pctNegative,
+      sentimentDelta,
+      topThemes,
+      sampleQuotes,
+    };
     const { narrative, recommendedActions } = writeReportNarrative(stats);
 
     const report = await Report.create({
@@ -92,7 +121,7 @@ router.post(
     });
 
     res.status(201).json(report);
-  })
+  }),
 );
 
 export default router;

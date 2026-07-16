@@ -10,12 +10,35 @@
  * AI1 — Auto-classification (heuristic, local, no external call)
  * ------------------------------------------------------------------ */
 const NEG_WORDS = [
-  "broken", "slow", "timeout", "confusing", "hate", "terrible", "bug", "fail",
-  "never", "forever", "worst", "frustrat", "crash", "missing", "waiting", "blocking",
+  "broken",
+  "slow",
+  "timeout",
+  "confusing",
+  "hate",
+  "terrible",
+  "bug",
+  "fail",
+  "never",
+  "forever",
+  "worst",
+  "frustrat",
+  "crash",
+  "missing",
+  "waiting",
+  "blocking",
 ];
 const POS_WORDS = [
-  "love", "great", "gorgeous", "fast", "amazing", "excellent", "saved", "huge improvement",
-  "thank", "helpful", "smooth",
+  "love",
+  "great",
+  "gorgeous",
+  "fast",
+  "amazing",
+  "excellent",
+  "saved",
+  "huge improvement",
+  "thank",
+  "helpful",
+  "smooth",
 ];
 
 export function classifyFeedback(content, existingThemeNames = []) {
@@ -35,18 +58,20 @@ export function classifyFeedback(content, existingThemeNames = []) {
   }
 
   const themeGuess =
-    existingThemeNames.find((t) => lower.includes(t.split(" ")[0].toLowerCase())) ||
+    existingThemeNames.find((t) =>
+      lower.includes(t.split(" ")[0].toLowerCase()),
+    ) ||
     (lower.includes("onboard")
       ? "Onboarding friction"
       : lower.includes("bill") || lower.includes("invoice")
-      ? "Billing & invoices"
-      : lower.includes("mobile") || lower.includes("app")
-      ? "Mobile experience"
-      : lower.includes("sso") || lower.includes("security")
-      ? "SSO / security"
-      : lower.includes("export") || lower.includes("report")
-      ? "Export & reporting"
-      : "General feedback");
+        ? "Billing & invoices"
+        : lower.includes("mobile") || lower.includes("app")
+          ? "Mobile experience"
+          : lower.includes("sso") || lower.includes("security")
+            ? "SSO / security"
+            : lower.includes("export") || lower.includes("report")
+              ? "Export & reporting"
+              : "General feedback");
 
   return {
     sentiment,
@@ -65,22 +90,32 @@ export function classifyFeedback(content, existingThemeNames = []) {
  * ------------------------------------------------------------------ */
 export function writeReportNarrative(stats) {
   const top = stats.topThemes[0];
-  const trendWord = stats.sentimentDelta > 0 ? "worsened" : stats.sentimentDelta < 0 ? "improved" : "held steady";
+  const trendWord =
+    stats.sentimentDelta > 0
+      ? "worsened"
+      : stats.sentimentDelta < 0
+        ? "improved"
+        : "held steady";
 
   const narrative = top
     ? `Over this period the workspace logged ${stats.totalItems} feedback item${stats.totalItems === 1 ? "" : "s"}, ${
         stats.pctNegative
       }% negative — sentiment has ${trendWord} versus the prior period. The leading theme was "${top.name}" with ${
         top.count
-      } mention${top.count === 1 ? "" : "s"}, ahead of ${stats.topThemes
-        .slice(1, 3)
-        .map((t) => `"${t.name}"`)
-        .join(" and ") || "other themes"}.`
+      } mention${top.count === 1 ? "" : "s"}, ahead of ${
+        stats.topThemes
+          .slice(1, 3)
+          .map((t) => `"${t.name}"`)
+          .join(" and ") || "other themes"
+      }.`
     : `No feedback was logged in this period.`;
 
   const recommendedActions = stats.topThemes
     .slice(0, 3)
-    .map((t) => `Investigate and address "${t.name}" — it's a top driver of this period's feedback (${t.count} mentions).`);
+    .map(
+      (t) =>
+        `Investigate and address "${t.name}" — it's a top driver of this period's feedback (${t.count} mentions).`,
+    );
 
   return { narrative, recommendedActions };
 }
