@@ -1,222 +1,511 @@
-# LOOP — AI Customer-Feedback Intelligence Platform
+# 🚀 LOOP — AI Customer Feedback Intelligence Platform
 
-Multi-tenant SaaS: any number of companies ("workspaces") share this one
-deployment, each with its own isolated data, its own three-tier team
-(Admin / Analyst / Viewer), and its own branded view of the app driven by
-whichever company the logged-in person belongs to.
+LOOP is a **multi-tenant SaaS platform** that helps organizations transform customer feedback into actionable insights using Artificial Intelligence.
+
+Support tickets, surveys, app reviews, emails, and customer conversations often accumulate faster than teams can analyze them. LOOP centralizes this feedback, automatically classifies it, identifies trends, generates Voice of Customer reports, and enables users to ask natural language questions about customer sentiment through **Ask LOOP**.
+
+Built with a modern microservice architecture using **React**, **Node.js**, **MongoDB**, **FastAPI**, and **Claude AI**.
+
+---
+
+# ✨ Features
+
+- 🏢 Multi-tenant SaaS architecture
+- 🔐 Secure JWT Authentication
+- 👥 Role-Based Access Control (Admin, Analyst, Viewer)
+- 📊 Interactive dashboards
+- 📥 Feedback inbox with search & filters
+- 📁 CSV feedback import
+- 🤖 AI-powered Ask LOOP assistant
+- 📈 Trend & theme detection
+- 📄 Voice of Customer (VoC) reports
+- 🎨 Workspace branding & themes
+- ⚡ Fast React frontend
+- 🐍 Python AI service
+- 🔒 Complete tenant isolation
+
+---
+
+# 🏗️ Project Architecture
 
 ```
 loop/
-  loop-frontend/   React + Vite + pure CSS (no framework/utility library)
-  backend/         Node/Express + MongoDB — auth, RBAC, feedback, themes, reports
-  ai-service/      Python + FastAPI — Ask LOOP only, the one place that calls Claude
-```cd 
+│
+├── loop-frontend/     React + Vite
+├── backend/           Node.js + Express + MongoDB
+└── ai-service/        Python + FastAPI
+```
 
-## Why three services
+Each service has a dedicated responsibility.
 
-| Service | Language | Responsible for |
-|---|---|---|
-| `loop-frontend` | JS (React) | UI only — calls `backend`, never `ai-service` directly |
-| `backend` | JS (Node/Express) | Auth, sessions, RBAC, tenant isolation, feedback CRUD, CSV import, themes, Voice-of-Customer reports. All of this runs as fast deterministic logic — **no external AI calls**. |
-| `ai-service` | Python (FastAPI) | Ask LOOP (grounded Q&A) only. This is the **only** component that calls the Anthropic API. `backend` resolves the caller's `workspaceId` from their session and forwards just that + the question — `ai-service` never talks to the browser directly. |
+| Service | Technology | Responsibility |
+|----------|------------|----------------|
+| **Frontend** | React + Vite | User Interface |
+| **Backend** | Node.js + Express | Authentication, RBAC, APIs, Feedback Management, Reports |
+| **AI Service** | FastAPI + Python | Ask LOOP AI Assistant & Claude Integration |
 
-This keeps the one AI-calling code path small and isolated, and satisfies
-"use Python and JS in the backend" without scattering Claude calls
-throughout the app.
+The frontend communicates **only** with the backend.
 
-## The three-tier user hierarchy (per company)
+The backend communicates with the AI service whenever an AI response is required.
 
-Every workspace (company) has its own members split across exactly three
-roles, enforced server-side on every request:
-
-| Role | Can do |
-|---|---|
-| **Admin** | Everything — manage members & roles, full data access |
-| **Analyst** | Ingest/manage feedback, use AI features, cannot manage members |
-| **Viewer** | Read-only — dashboards, reports, Ask LOOP |
-
-A forbidden action always returns a clean `403`, never a silent no-op or a
-crash. This is enforced in `backend/src/middleware/roles.js` on every
-protected route — the frontend hiding a button is a UX nicety, not the
-real boundary.
-
-## Multi-tenant SaaS architecture
-
-Signing up at `/signup` creates a brand-new **Workspace** (company) and
-makes the creator its Admin. One login page serves every company — logging
-in resolves *which* workspace you belong to from your account, and the
-backend scopes **every single database query** by that `workspaceId`,
-resolved server-side from your verified session token, never trusted from
-a URL or request body. Two companies can run in the same database and
-never see a byte of each other's data — the person you're logged in as
-only ever sees their own company's feedback, themes, reports, and
-teammates, and the sidebar always shows which company that is.
+The AI service is the **only** component that calls the Anthropic Claude API.
 
 ---
 
-## 0. Prerequisites
+# 🏢 Multi-Tenant SaaS
 
-- **Node.js 18+** and npm
-- **Python 3.10+** and pip
-- **MongoDB**, installed locally (Step 1 below)
-- Optional: an **Anthropic API key**, used only by `ai-service` for Ask
-  LOOP. Without one, Ask LOOP still retrieves and cites real feedback, just
-  with a simple local summary instead of a Claude-written answer — so the
-  whole app is demoable with zero API keys.
+LOOP is designed as a **true multi-tenant application**.
+
+Every company receives its own isolated workspace.
+
+Each workspace contains:
+
+- Members
+- Feedback
+- Reports
+- Themes
+- Dashboard
+- AI conversations
+
+Although every company shares the same deployment and database, the backend scopes every request using the authenticated user's **Workspace ID**, ensuring complete data isolation.
+
+No company can access another company's information.
 
 ---
 
-## 1. Install MongoDB locally
+# 👥 User Roles
 
-Pick your OS:
+Each workspace contains exactly three user roles.
 
-**macOS (Homebrew):**
+| Role | Permissions |
+|------|-------------|
+| **Admin** | Complete access, workspace management, member management |
+| **Analyst** | Manage feedback, AI features, reports |
+| **Viewer** | Read-only dashboards, reports, Ask LOOP |
+
+All permissions are enforced **server-side**.
+
+Unauthorized requests return **HTTP 403 Forbidden**.
+
+---
+
+# ⚙️ Tech Stack
+
+## Frontend
+
+- React
+- Vite
+- React Router
+- Context API
+- Pure CSS
+
+## Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT Authentication
+
+## AI Service
+
+- Python
+- FastAPI
+- Anthropic Claude API
+- Local Embedding Search
+
+---
+
+# 📦 Prerequisites
+
+Before running the project, install:
+
+- Node.js **18+**
+- npm
+- Python **3.10+**
+- pip
+- MongoDB
+
+Optional:
+
+- Anthropic API Key
+
+The application works without an API key using local summaries, but Ask LOOP becomes significantly more powerful when Claude is enabled.
+
+---
+
+# 🗄️ MongoDB Installation
+
+## macOS
+
 ```bash
 brew tap mongodb/brew
 brew install mongodb-community
 brew services start mongodb-community
 ```
 
-**Windows:**
-Download the MSI installer from
-<https://www.mongodb.com/try/download/community>, run it (choose "Install
-as a Service" so it starts automatically), then confirm it's running via
-the Services app or:
+---
+
+## Windows
+
+Download MongoDB Community Edition:
+
+https://www.mongodb.com/try/download/community
+
+Choose:
+
+> Install MongoDB as a Service
+
+Verify installation:
+
 ```powershell
 net start MongoDB
 ```
 
-**Linux (Ubuntu/Debian):**
+---
+
+## Ubuntu / Debian
+
 ```bash
-# Follow the official instructions for your exact version:
-# https://www.mongodb.com/docs/manual/administration/install-on-linux/
 sudo systemctl start mongod
 sudo systemctl enable mongod
 ```
 
-**Or, if you have Docker and don't want a native install:**
+---
+
+## Docker
+
 ```bash
-docker run -d --name loop-mongo -p 27017:27017 mongo:7
+docker run -d \
+--name loop-mongo \
+-p 27017:27017 \
+mongo:7
 ```
 
-Whichever route you pick, you should end up with MongoDB listening on
-`mongodb://127.0.0.1:27017` — that's the default every `.env.example` in
-this repo already points to, so no extra config is needed for local dev.
+MongoDB should be available at
 
-Verify it's up:
+```
+mongodb://127.0.0.1:27017
+```
+
+Verify:
+
 ```bash
 mongosh --eval "db.runCommand({ ping: 1 })"
 ```
 
 ---
 
-## 2. Start the backend (Node/Express)
+# 🚀 Backend Setup
 
 ```bash
 cd backend
+
 npm install
+
 cp .env.example .env
 ```
 
-`.env` defaults already match a standard local Mongo install — open it and
-set a real `JWT_SECRET` (any long random string, e.g. `openssl rand -hex 32`).
+Edit `.env`
 
-Seed the demo workspace (required — creates a company, three role-based
-users, and 130 realistic feedback items), then start the API:
+Set a secure JWT secret.
+
+Example:
+
+```
+JWT_SECRET=your_super_secure_secret
+```
+
+Seed the demo database:
 
 ```bash
 npm run seed
+```
+
+Start the server:
+
+```bash
 npm run dev
 ```
-→ `http://localhost:4000`
 
-| Role | Email | Password |
-|---|---|---|
-| Admin | `admin@acme-demo.com` | `Password123!` |
-| Analyst | `analyst@acme-demo.com` | `Password123!` |
-| Viewer | `viewer@acme-demo.com` | `Password123!` |
+Backend runs at:
+
+```
+http://localhost:4000
+```
 
 ---
 
-## 3. Start the AI service (Python/FastAPI)
+## Demo Accounts
 
-In a **second terminal**:
+| Role | Email | Password |
+|------|--------|----------|
+| Admin | admin@acme-demo.com | Password123! |
+| Analyst | analyst@acme-demo.com | Password123! |
+| Viewer | viewer@acme-demo.com | Password123! |
+
+---
+
+# 🤖 AI Service Setup
+
+Open another terminal.
 
 ```bash
 cd ai-service
-python3 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+
+python -m venv venv
+```
+
+Activate the environment
+
+### Windows
+
+```bash
+venv\Scripts\activate
+```
+
+### macOS/Linux
+
+```bash
+source venv/bin/activate
+```
+
+Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
+
+Copy the environment file
+
+```bash
 cp .env.example .env
 ```
 
-Open `.env` — `MONGODB_URI` should match the backend's, and optionally set
-`ANTHROPIC_API_KEY` for real Claude-written Ask LOOP answers.
+Optionally add
+
+```
+ANTHROPIC_API_KEY=
+```
+
+Start the server
 
 ```bash
 uvicorn main:app --reload --port 8000
 ```
-→ `http://localhost:8000` — check `/health`.
+
+Visit
+
+```
+http://localhost:8000/health
+```
 
 ---
 
-## 4. Start the frontend (React)
+# 💻 Frontend Setup
 
-In a **third terminal**:
+Open a third terminal.
 
 ```bash
 cd loop-frontend
+
 npm install
+
 cp .env.example .env
+
 npm run dev
 ```
-→ `http://localhost:5173` — log in with any seeded account above.
+
+Frontend runs at
+
+```
+http://localhost:5173
+```
+
+Login using one of the demo accounts.
 
 ---
 
-## 5. Try it out
+# 🧪 Try LOOP
 
-- **Dashboard** — real stats and charts computed from the seeded feedback
-- **Inbox** — search/filter the 130 seeded items, add a new one (classified
-  instantly by local logic), or import a CSV
-- **Trends** — click a theme to drill into the actual feedback behind it
-- **Ask LOOP** — ask "What are users saying about onboarding?" — this is
-  the one request that leaves Node and goes to `ai-service`, which
-  retrieves real feedback and asks Claude to answer only from it
-- **Reports** — generate a Voice-of-Customer report; try it as Analyst vs
-  Viewer to see RBAC in action
-- **Members** (Admin only) — invite a teammate; since real email delivery
-  is out of scope, LOOP shows a one-time temp password to share directly
+After all services are running, explore the platform.
 
-Sign up a **second company** at `/signup` to see tenant isolation for
-yourself — it gets its own empty inbox, themes, and members, completely
-separate from Acme Corp.
+### 📊 Dashboard
+
+- Customer analytics
+- Charts
+- Feedback statistics
 
 ---
 
-## Project structure
+### 📥 Inbox
+
+- Browse feedback
+- Search
+- Filter
+- Import CSV
+- Add new feedback
+
+---
+
+### 📈 Trends
+
+- AI-generated themes
+- Drill down into related feedback
+
+---
+
+### 🤖 Ask LOOP
+
+Ask questions such as:
+
+> What are customers saying about onboarding?
+
+The backend forwards only the user's workspace and query to the AI service, which retrieves relevant feedback and generates a grounded response using Claude.
+
+---
+
+### 📄 Reports
+
+Generate Voice of Customer reports with AI-generated summaries.
+
+---
+
+### 👥 Members
+
+(Admin Only)
+
+- Invite members
+- Change roles
+- Manage workspace users
+
+---
+
+# 📂 Project Structure
 
 ```
 loop/
-  loop-frontend/
-    src/
-      styles/            variables.css, base.css, layout.css, components.css, auth.css, chat.css
-      components/         Layout, RouteGuards, ui.jsx, charts.jsx
-      context/AuthContext.jsx
-      lib/api.js           every backend endpoint wrapper
-      pages/                 Dashboard, Inbox, Trends, AskLoop, Reports, Settings, auth/*
-  backend/
-    server.js
-    src/
-      models/               Workspace, User, Feedback, Theme, Report (Mongoose)
-      middleware/            auth.js (JWT + tenant resolution), roles.js (RBAC), errorHandler.js
-      routes/                 auth, feedback, theme, insight (proxy), report, workspace
-      utils/ai.js              local classification + report narrative (no external calls)
-      utils/embeddings.js       hashing-trick vectors, shared algorithm with ai-service
-    seed/seed.js
-  ai-service/
-    main.py                  FastAPI app — the only Anthropic API caller in this project
+
+├── loop-frontend/
+│   ├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── styles/
+│   ├── context/
+│   └── lib/
+│
+├── backend/
+│   ├── src/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── utils/
+│   │   └── controllers/
+│   ├── seed/
+│   └── server.js
+│
+└── ai-service/
+    ├── main.py
+    ├── services/
+    └── utils/
 ```
 
-See `backend/README.md`, `ai-service/README.md`, and `loop-frontend/README.md`
-for each service's full API reference and internals.
+---
+
+# 🔒 Security
+
+LOOP follows security-first principles.
+
+- JWT Authentication
+- Server-side RBAC
+- Protected API routes
+- Workspace isolation
+- Secure middleware
+- Role validation
+- No direct browser access to AI service
+
+---
+
+# 🧠 AI Workflow
+
+```
+User
+   │
+   ▼
+Frontend
+   │
+   ▼
+Backend
+   │
+   ▼
+AI Service
+   │
+   ▼
+Claude API
+```
+
+The browser never communicates directly with Claude.
+
+Every AI request passes through the backend, ensuring authentication, authorization, and workspace isolation.
+
+---
+
+# 📌 Future Improvements
+
+- Email invitations
+- Slack integration
+- Microsoft Teams integration
+- Sentiment analytics
+- Real-time notifications
+- File attachments
+- Mobile application
+- Advanced analytics
+- Team collaboration features
+
+---
+
+# 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+
+```bash
+git checkout -b feature/my-feature
+```
+
+3. Commit your changes
+
+```bash
+git commit -m "Add new feature"
+```
+
+4. Push your branch
+
+```bash
+git push origin feature/my-feature
+```
+
+5. Open a Pull Request
+
+---
+
+# 📄 License
+
+This project is created for educational purposes and hackathon development.
+
+---
+
+# ❤️ Built With
+
+- React
+- Node.js
+- Express.js
+- MongoDB
+- FastAPI
+- Anthropic Claude
+- JavaScript
+- Python
+
+---
+
+## ⭐ If you like this project, don't forget to star the repository!
