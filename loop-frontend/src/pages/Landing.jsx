@@ -60,7 +60,7 @@ export default function Landing() {
       <footer className="landing-footer">
         <div className="row gap-2">
           <LoopMark size={18} />
-          <span className="text-meta">LOOP — close the loop on customer feedback.</span>
+          <span className="text-meta">LOOP.</span>
         </div>
         <Link to="/signup" className="link-quiet">Create a workspace <ArrowRight size={13} /></Link>
       </footer>
@@ -82,7 +82,7 @@ function HeroSection() {
       </h1>
       <p className="landing-sub">
         LOOP turns scattered support tickets, reviews, and survey replies into a ranked,
-        evidence-backed list of what to build next — grounded in your real customer data,
+        evidence backed list of what to build next grounded in your real customer data,
         never invented.
       </p>
       <div className="row gap-3 landing-hero-cta">
@@ -112,16 +112,16 @@ function SectionHead({ eyebrow, title, sub }) {
 
 function ProductSection() {
   const steps = [
-    { icon: Boxes, title: "Feedback in", body: "Support tickets, app reviews, NPS replies, sales notes, and social mentions — every channel, one inbox." },
+    { icon: Boxes, title: "Feedback in", body: "Support tickets, app reviews, NPS replies, sales notes, and social mentions every channel, one inbox." },
     { icon: Sparkles, title: "LOOP engine", body: "Claude classifies sentiment, clusters items into named themes, and tracks what's spiking week over week." },
-    { icon: FileBarChart, title: "Insights out", body: "A live dashboard, grounded Q&A, and a shareable Voice-of-Customer report — backed by real citations." },
+    { icon: FileBarChart, title: "Insights out", body: "A live dashboard, grounded Q&A, and a shareable Voice of Customer report backed by real citations." },
   ];
   return (
     <div>
       <SectionHead
         eyebrow="Product"
         title="One inbox for every channel your customers use"
-        sub="LOOP is built like the internal tools real product teams already pay for — not a to-do list with a chatbot bolted on."
+        sub="LOOP is built like the internal tools real product teams already pay for not a to do list with a chatbot bolted on."
       />
       <div className="landing-steps">
         {steps.map((s, i) => (
@@ -135,7 +135,7 @@ function ProductSection() {
       </div>
       <div className="landing-callout">
         <Lock size={16} />
-        <p>Every company gets its own isolated workspace — one login, zero shared data, enforced on every request.</p>
+        <p>Every company gets its own isolated workspace one login, zero shared data, enforced on every request.</p>
       </div>
     </div>
   );
@@ -143,13 +143,13 @@ function ProductSection() {
 
 function FeaturesSection() {
   const ai = [
-    { icon: Sparkles, title: "Auto-classification", body: "Every new item is tagged with sentiment and theme the moment it lands — no manual triage." },
+    { icon: Sparkles, title: "Auto classification", body: "Every new item is tagged with sentiment and theme the moment it lands no manual triage." },
     { icon: Layers, title: "Theme clustering & trends", body: "Similar feedback groups itself into named themes, with spikes flagged automatically." },
-    { icon: MessageSquare, title: "Ask LOOP", body: "Ask a plain-English question, get an answer grounded in real feedback — with citations, never invention." },
-    { icon: FileBarChart, title: "Voice-of-Customer reports", body: "One click turns a period of feedback into a digest you could forward to leadership as-is." },
+    { icon: MessageSquare, title: "Ask LOOP", body: "Ask a plain English question, get an answer grounded in real feedback with citations, never invention." },
+    { icon: FileBarChart, title: "Voice of Customer reports", body: "One click turns a period of feedback into a digest you could forward to leadership as is." },
   ];
   const core = [
-    { icon: ShieldCheck, title: "Role-based access", body: "Admin, Analyst, and Viewer — enforced server-side, not just hidden buttons." },
+    { icon: ShieldCheck, title: "Role based access", body: "Admin, Analyst, and Viewer enforced server-side, not just hidden buttons." },
     { icon: GitBranch, title: "Full status workflow", body: "New → Reviewed → Actioned, with search, filters, and pagination built in." },
   ];
   return (
@@ -181,8 +181,8 @@ function FeaturesSection() {
 function PricingSection() {
   const tiers = [
     { name: "Starter", price: "$0", tag: "One workspace, up to 3 seats", cta: "Start free", features: ["500 feedback items / mo", "Core dashboard & inbox", "Manual CSV import"] },
-    { name: "Team", price: "$79", tag: "Per workspace / month", cta: "Start free trial", featured: true, features: ["Unlimited feedback items", "All 4 AI features", "Role-based access control", "Voice-of-Customer reports"] },
-    { name: "Enterprise", price: "Custom", tag: "For multi-brand orgs", cta: "Talk to us", features: ["Multiple workspaces", "SSO / SAML", "Dedicated support"] },
+    { name: "Team", price: "$79", tag: "Per workspace / month", cta: "Start free trial", featured: true, features: ["Unlimited feedback items", "All 4 AI features", "Role based access control", "Voice of Customer reports"] },
+    { name: "Enterprise", price: "Custom", tag: "For multi brand orgs", cta: "Talk to us", features: ["Multiple workspaces", "SSO / SAML", "Dedicated support"] },
   ];
   return (
     <div>
