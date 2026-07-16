@@ -14,16 +14,16 @@ const TABS = [
 ];
 
 export default function Landing() {
-  const [tab, setTab] = useState("product");
+  const [tab, setTab] = useState("home");
 
   return (
     <div className="landing">
       <nav className="landing-nav">
         <div className="landing-nav-inner">
-          <div className="landing-brand">
+          <button className="landing-brand" onClick={() => setTab("home")}>
             <LoopMark size={26} />
             <span>LOOP</span>
-          </div>
+          </button>
 
           <div className="landing-tabs">
             {TABS.map((t) => (
@@ -44,44 +44,17 @@ export default function Landing() {
         </div>
       </nav>
 
-      <header className="landing-hero">
-        <div className="landing-hero-glow" aria-hidden="true" />
-        <span className="landing-eyebrow-pill">
-          <Sparkles size={13} /> AI-powered customer feedback intelligence
-        </span>
-        <h1 className="landing-h1">
-          Understand <em>every voice.</em>
-          <br />
-          Build better products.
-        </h1>
-        <p className="landing-sub">
-          LOOP turns scattered support tickets, reviews, and survey replies into a ranked,
-          evidence-backed list of what to build next — grounded in your real customer data,
-          never invented.
-        </p>
-        <div className="row gap-3 landing-hero-cta">
-          <Link to="/signup" className="btn btn-primary">
-            Start free <ArrowRight size={15} />
-          </Link>
-          <button className="btn btn-secondary" onClick={() => setTab("product")}>
-            See how it works
-          </button>
-        </div>
-        <p className="landing-trusted-label">Built for multi-tenant SaaS teams</p>
-        <div className="landing-trusted-row">
-          {["Acme", "ByteScale", "Spherule", "Cloudsoft", "Penta"].map((name) => (
-            <span key={name} className="landing-trusted-chip">{name}</span>
-          ))}
-        </div>
-      </header>
-
-      <main className="landing-panel-wrap">
-        <div className="panel landing-panel">
-          {tab === "product" && <ProductSection />}
-          {tab === "features" && <FeaturesSection />}
-          {tab === "pricing" && <PricingSection />}
-          {tab === "resources" && <ResourcesSection />}
-        </div>
+      <main className="landing-stage">
+        {tab === "home" ? (
+          <HeroSection />
+        ) : (
+          <div className="panel landing-panel">
+            {tab === "product" && <ProductSection />}
+            {tab === "features" && <FeaturesSection />}
+            {tab === "pricing" && <PricingSection />}
+            {tab === "resources" && <ResourcesSection />}
+          </div>
+        )}
       </main>
 
       <footer className="landing-footer">
@@ -92,6 +65,38 @@ export default function Landing() {
         <Link to="/signup" className="link-quiet">Create a workspace <ArrowRight size={13} /></Link>
       </footer>
     </div>
+  );
+}
+
+function HeroSection() {
+  return (
+    <header className="landing-hero">
+      <div className="landing-hero-glow" aria-hidden="true" />
+      <span className="landing-eyebrow-pill">
+        <Sparkles size={13} /> AI-powered customer feedback intelligence
+      </span>
+      <h1 className="landing-h1">
+        Understand <em>every voice.</em>
+        <br />
+        Build better products.
+      </h1>
+      <p className="landing-sub">
+        LOOP turns scattered support tickets, reviews, and survey replies into a ranked,
+        evidence-backed list of what to build next — grounded in your real customer data,
+        never invented.
+      </p>
+      <div className="row gap-3 landing-hero-cta">
+        <Link to="/signup" className="btn btn-primary">
+          Start free <ArrowRight size={15} />
+        </Link>
+      </div>
+      <p className="landing-trusted-label">Built for multi-tenant SaaS teams</p>
+      <div className="landing-trusted-row">
+        {["Acme", "ByteScale", "Spherule", "Cloudsoft", "Penta"].map((name) => (
+          <span key={name} className="landing-trusted-chip">{name}</span>
+        ))}
+      </div>
+    </header>
   );
 }
 

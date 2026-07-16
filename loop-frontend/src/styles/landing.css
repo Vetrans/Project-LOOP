@@ -26,11 +26,24 @@
   display: flex;
   align-items: center;
   gap: 9px;
+  background: none;
+  border: none;
+  cursor: pointer;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 16px;
   color: var(--ink-100);
   letter-spacing: -0.01em;
+}
+.landing-stage {
+  flex: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 28px 22px 42px;
+}
+.landing-stage > * {
+  animation: landing-fade 0.25s var(--ease);
 }
 .landing-tabs {
   display: flex;
@@ -48,7 +61,9 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-300);
-  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+  transition:
+    background-color 0.15s var(--ease),
+    color 0.15s var(--ease);
 }
 .landing-tab:hover {
   color: var(--ink-100);
@@ -72,7 +87,7 @@
   position: relative;
   max-width: 780px;
   margin: 0 auto;
-  padding: 88px 24px 56px;
+  padding: 48px 24px 56px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -86,7 +101,11 @@
   width: 900px;
   height: 520px;
   z-index: -1;
-  background: radial-gradient(ellipse at center, rgba(132, 120, 242, 0.22), transparent 65%);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(132, 120, 242, 0.22),
+    transparent 65%
+  );
   pointer-events: none;
 }
 .landing-eyebrow-pill {
@@ -166,8 +185,14 @@
   animation: landing-fade 0.25s var(--ease);
 }
 @keyframes landing-fade {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .landing-section-head {
   max-width: 560px;
@@ -332,12 +357,18 @@
 }
 
 @media (max-width: 860px) {
-  .landing-tabs { display: none; }
-  .landing-h1 { font-size: 34px; }
+  .landing-tabs {
+    display: none;
+  }
+  .landing-h1 {
+    font-size: 34px;
+  }
   .landing-steps,
   .landing-feature-grid,
   .landing-pricing-grid {
     grid-template-columns: 1fr;
   }
-  .landing-panel { padding: 26px 20px; }
+  .landing-panel {
+    padding: 26px 20px;
+  }
 }
