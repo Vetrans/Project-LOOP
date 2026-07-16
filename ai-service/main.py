@@ -25,13 +25,13 @@ import os
 import re
 from typing import List, Optional
 
-from bson import ObjectId
-from bson.errors import InvalidId
-from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from pymongo import MongoClient
+from bson import ObjectId # type: ignore
+from bson.errors import InvalidId # type: ignore
+from dotenv import load_dotenv # type: ignore
+from fastapi import FastAPI, HTTPException # type: ignore
+from starlette.middleware.cors import CORSMiddleware # type: ignore
+from pydantic import BaseModel  # type: ignore[import]
+from pymongo import MongoClient  # type: ignore[import]
 
 load_dotenv()
 
@@ -55,7 +55,7 @@ db = mongo.get_default_database()
 
 anthropic_client = None
 if ANTHROPIC_API_KEY:
-    from anthropic import Anthropic
+    from anthropic import Anthropic # type: ignore
 
     anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
