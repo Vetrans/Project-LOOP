@@ -13,7 +13,12 @@
   border-radius: inherit;
   padding: 1px;
   background: var(--grad-panel-edge);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
@@ -66,7 +71,10 @@
   font-size: 13.5px;
   font-weight: 500;
   border: 1px solid transparent;
-  transition: background-color 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease),
+  transition:
+    background-color 0.15s var(--ease),
+    border-color 0.15s var(--ease),
+    color 0.15s var(--ease),
     transform 0.1s var(--ease);
   white-space: nowrap;
 }
@@ -131,7 +139,9 @@ textarea.input {
   font-size: 13.5px;
   color: var(--ink-100);
   outline: none;
-  transition: border-color 0.15s var(--ease), background-color 0.15s var(--ease);
+  transition:
+    border-color 0.15s var(--ease),
+    background-color 0.15s var(--ease);
 }
 .input::placeholder {
   color: var(--ink-500);
@@ -343,8 +353,12 @@ table.data-table tbody tr:hover {
   animation: fade-in 0.15s var(--ease);
 }
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .modal-box {
   width: 100%;
@@ -354,8 +368,14 @@ table.data-table tbody tr:hover {
   animation: modal-in 0.18s var(--ease);
 }
 @keyframes modal-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.98); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .modal-header {
   display: flex;
@@ -390,21 +410,54 @@ table.data-table tbody tr:hover {
   font-size: 12px;
   color: var(--ink-500);
 }
-.accent-violet { color: var(--violet); }
-.accent-teal { color: var(--teal); }
-.accent-coral { color: var(--coral); }
-.accent-amber { color: var(--amber); }
+.accent-violet {
+  color: var(--violet);
+}
+.accent-teal {
+  color: var(--teal);
+}
+.accent-coral {
+  color: var(--coral);
+}
+.accent-amber {
+  color: var(--amber);
+}
 
 /* ================= Layout helpers ================= */
-.stack { display: flex; flex-direction: column; }
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+.gap-1 {
+  gap: 4px;
+}
+.gap-2 {
+  gap: 8px;
+}
+.gap-3 {
+  gap: 12px;
+}
+.gap-4 {
+  gap: 16px;
+}
+.gap-sp {
+  gap: 25px;
+}
 
-.row { display: flex; align-items: center; }
-.row-between { display: flex; align-items: center; justify-content: space-between; }
-.row-wrap { display: flex; align-items: center; flex-wrap: wrap; }
+.row {
+  display: flex;
+  align-items: center;
+}
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.row-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
 
 .grid-stats {
   display: grid;
@@ -456,7 +509,9 @@ table.data-table tbody tr:hover {
   font-size: 12.5px;
   color: var(--ink-300);
   background: var(--surface-raised);
-  transition: border-color 0.15s var(--ease), color 0.15s var(--ease);
+  transition:
+    border-color 0.15s var(--ease),
+    color 0.15s var(--ease);
 }
 .chip:hover {
   border-color: rgba(132, 120, 242, 0.5);

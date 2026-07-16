@@ -37,9 +37,9 @@ export default function Landing() {
             ))}
           </div>
 
-          <div className="row gap-3">
+          <div className="row gap-sp">
             <Link to="/login" className="landing-login">Login</Link>
-            <Link to="/signup" className="btn btn-primary">Get Started</Link>
+            <Link to="/signup" className="btn btn-primary">Sign Up</Link>
           </div>
         </div>
       </nav>
