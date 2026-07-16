@@ -1,0 +1,153 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--ink-950);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--ink-700);
+  background: rgba(15, 20, 32, 0.6);
+  padding: 20px 16px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding: 0 8px;
+}
+.sidebar-brand-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--mist-100);
+}
+.sidebar-brand-tag {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mist-400);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mist-300);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.nav-link:hover {
+  background: var(--ink-800);
+  color: var(--mist-100);
+}
+.nav-link.active {
+  background: var(--violet-wash);
+  color: var(--violet);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--ink-700);
+  padding-top: 16px;
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+}
+.sidebar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--violet-wash);
+  color: var(--violet);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.sidebar-user-info {
+  min-width: 0;
+  flex: 1;
+}
+.sidebar-user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mist-100);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-user-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mist-400);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-logout {
+  border-radius: 6px;
+  padding: 6px;
+  color: var(--mist-400);
+  background: transparent;
+  flex-shrink: 0;
+}
+.sidebar-logout:hover {
+  background: var(--ink-800);
+  color: var(--coral);
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+}
+.main-content-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.status-page {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: var(--ink-950);
+  padding: 16px;
+  text-align: center;
+}
+.status-page-icon {
+  border-radius: 999px;
+  background: var(--ink-800);
+  color: var(--violet);
+  padding: 16px;
+}
