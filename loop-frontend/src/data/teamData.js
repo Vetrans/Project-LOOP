@@ -1,0 +1,152 @@
+export const teamSummary = [
+  {
+    id: 1,
+    title: "Total Members",
+    value: 18,
+    change: "+2 this week",
+    icon: "users",
+    color: "cyan",
+  },
+  {
+    id: 2,
+    title: "Developers",
+    value: 8,
+    change: "+1",
+    icon: "code",
+    color: "green",
+  },
+  {
+    id: 3,
+    title: "Designers",
+    value: 4,
+    change: "0",
+    icon: "palette",
+    color: "purple",
+  },
+  {
+    id: 4,
+    title: "Managers",
+    value: 3,
+    change: "+1",
+    icon: "briefcase",
+    color: "orange",
+  },
+];
+
+export const roles = [
+  "All",
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "UI/UX Designer",
+  "QA Engineer",
+  "AI Engineer",
+  "Project Manager",
+];
+
+export const departments = [
+  "All",
+  "Engineering",
+  "Design",
+  "Management",
+  "Testing",
+];
+
+export const statusList = [
+  "All",
+  "Active",
+  "Away",
+  "Offline",
+];
+
+export const teamMembers = [
+  {
+    id: 1,
+    avatar: "",
+    name: "Aayush Umrey",
+    email: "aayush@loopai.com",
+    phone: "+91 9876543210",
+    role: "Frontend Developer",
+    department: "Engineering",
+    status: "Active",
+    joined: "12 Jan 2026",
+    projects: 6,
+    performance: 95,
+    lastActive: "2 mins ago",
+  },
+
+  {
+    id: 2,
+    avatar: "",
+    name: "Rahul Kumar",
+    email: "rahul@loopai.com",
+    phone: "+91 9823412345",
+    role: "Backend Developer",
+    department: "Engineering",
+    status: "Active",
+    joined: "05 Feb 2026",
+    projects: 4,
+    performance: 91,
+    lastActive: "5 mins ago",
+  },
+
+  {
+    id: 3,
+    avatar: "",
+    name: "Sneha Patel",
+    email: "sneha@loopai.com",
+    phone: "+91 9871209871",
+    role: "UI/UX Designer",
+    department: "Design",
+    status: "Away",
+    joined: "20 Mar 2026",
+    projects: 8,
+    performance: 97,
+    lastActive: "35 mins ago",
+  },
+
+  {
+    id: 4,
+    avatar: "",
+    name: "Amit Singh",
+    email: "amit@loopai.com",
+    phone: "+91 9999999999",
+    role: "Project Manager",
+    department: "Management",
+    status: "Active",
+    joined: "18 Jan 2026",
+    projects: 12,
+    performance: 99,
+    lastActive: "Online",
+  },
+
+  {
+    id: 5,
+    avatar: "",
+    name: "Priya Sharma",
+    email: "priya@loopai.com",
+    phone: "+91 9845612345",
+    role: "QA Engineer",
+    department: "Testing",
+    status: "Offline",
+    joined: "08 Apr 2026",
+    projects: 5,
+    performance: 88,
+    lastActive: "Yesterday",
+  },
+
+  {
+    id: 6,
+    avatar: "",
+    name: "Rohit Verma",
+    email: "rohit@loopai.com",
+    phone: "+91 9877777777",
+    role: "AI Engineer",
+    department: "Engineering",
+    status: "Active",
+    joined: "25 May 2026",
+    projects: 7,
+    performance: 94,
+    lastActive: "10 mins ago",
+  },
+];

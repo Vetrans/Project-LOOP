@@ -1,8 +1,42 @@
-@import "./styles/variables.css";
-@import "./styles/base.css";
-@import "./styles/layout.css";
-@import "./styles/components.css";
-@import "./styles/pages.css";
-@import "./styles/auth.css";
-@import "./styles/chat.css";
-@import "./styles/landing.css";
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+html {
+  scroll-behavior: smooth;
+}
+/* Team Drawer Scrollbar */
+
+.drawer-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(50, 230, 164, 0.5) transparent;
+}
+
+.drawer-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.drawer-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.drawer-scroll::-webkit-scrollbar-thumb {
+  background: rgba(50, 230, 164, 0.45);
+  border-radius: 999px;
+}
+
+.drawer-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(50, 230, 164, 0.8);
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}

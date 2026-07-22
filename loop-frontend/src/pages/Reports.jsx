@@ -1,141 +1,156 @@
-import { useEffect, useState } from "react";
-import { FileText, Plus } from "lucide-react";
-import { reportsApi } from "../lib/api";
-import { EmptyState, ErrorState, Modal, Skeleton } from "../components/ui";
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useMemo, useState } from "react";
+
+import DashboardLayout from "../components/layout/DashboardLayout";
+import PageContainer from "../components/layout/PageContainer";
+
+import ReportsHeader from "../components/reports/ReportsHeader";
+import ReportSummaryCards from "../components/reports/ReportSummaryCards";
+import ReportFilters from "../components/reports/ReportFilters";
+import ReportsTable from "../components/reports/ReportsTable";
+import ReportPreview from "../components/reports/ReportPreview";
+import ExportModal from "../components/reports/ExportModal";
+
+import {
+  getReportSummary,
+  getReports,
+  exportReport,
+} from "../services/reportsService";
+
+import {
+  reportTypes,
+  reportStatus,
+} from "../data/reportsData";
 
 export default function Reports() {
-  const { can } = useAuth();
+  const [summary, setSummary] = useState([]);
   const [reports, setReports] = useState([]);
+
+  const [selectedReport, setSelectedReport] = useState(null);
+
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState("All");
+  const [status, setStatus] = useState("All");
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [open, setOpen] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [active, setActive] = useState(null);
 
-  function load() {
+  const [showExportModal, setShowExportModal] = useState(false);
+
+  useEffect(() => {
+    loadReports();
+  }, []);
+
+  const loadReports = async () => {
     setLoading(true);
-    reportsApi
-      .list()
-      .then((res) => setReports(res.data))
-      .catch((err) => setError(err?.response?.data?.message || "Couldn't load reports."))
-      .finally(() => setLoading(false));
-  }
 
-  useEffect(load, []);
-
-  async function generate() {
-    setGenerating(true);
-    setError("");
     try {
-      await reportsApi.generate(7);
-      setOpen(false);
-      load();
-    } catch (err) {
-      setError(err?.response?.data?.message || "Couldn't generate a report.");
+      const summaryData = await getReportSummary();
+      const reportsData = await getReports();
+
+      setSummary(summaryData);
+      setReports(reportsData);
+
+      if (reportsData.length > 0 && !selectedReport) {
+        setSelectedReport(reportsData[0]);
+      }
+    } catch (error) {
+      console.error(error);
     } finally {
-      setGenerating(false);
+      setLoading(false);
     }
+  };
+
+  const filteredReports = useMemo(() => {
+    return reports.filter((report) => {
+      const matchesSearch =
+        report.name.toLowerCase().includes(search.toLowerCase()) ||
+        report.createdBy.toLowerCase().includes(search.toLowerCase());
+
+      const matchesType =
+        type === "All" || report.type === type;
+
+      const matchesStatus =
+        status === "All" || report.status === status;
+
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [reports, search, type, status]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setType("All");
+    setStatus("All");
+  };
+
+  const handlePreview = (report) => {
+    setSelectedReport(report);
+  };
+
+  const handleDownload = (report) => {
+    console.log("Download:", report);
+
+    alert(
+      `Downloading "${report.name}" will work after backend integration.`
+    );
+  };
+
+  const handleExport = async (format) => {
+    await exportReport(format);
+
+    setShowExportModal(false);
+
+    alert(
+      `${format.toUpperCase()} export will be available after backend integration.`
+    );
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <PageContainer>
+          <div className="flex h-[60vh] items-center justify-center text-lg text-gray-400">
+            Loading Reports...
+          </div>
+        </PageContainer>
+      </DashboardLayout>
+    );
   }
 
   return (
-    <div>
-      <header className="page-header">
-        <div>
-          <h1 className="page-title">Voice-of-Customer reports</h1>
-          <p className="page-subtitle">Shareable digests you could forward to leadership as-is.</p>
-        </div>
-        {can("use_ai") && (
-          <button className="btn btn-primary" onClick={() => setOpen(true)}>
-            <Plus size={15} /> Generate report
-          </button>
-        )}
-      </header>
+    <DashboardLayout>
+      <PageContainer>
+        <ReportsHeader
+          onRefresh={loadReports}
+          onExport={() => setShowExportModal(true)}
+        />
 
-      {error && <ErrorState message={error} />}
+        <ReportSummaryCards summary={summary} />
 
-      {loading ? (
-        <div className="grid-two">
-          {[...Array(2)].map((_, i) => (
-            <Skeleton key={i} style={{ height: 124, width: "100%" }} />
-          ))}
-        </div>
-      ) : reports.length === 0 ? (
-        <EmptyState title="No reports yet" description="Generate your first Voice-of-Customer report to get a shareable weekly digest." />
-      ) : (
-        <div className="grid-two">
-          {reports.map((r) => (
-            <button key={r._id} onClick={() => setActive(r)} className="panel panel-pad report-card">
-              <div className="report-card-period">
-                <FileText size={15} />
-                <span>
-                  {new Date(r.periodStart).toLocaleDateString()} – {new Date(r.periodEnd).toLocaleDateString()}
-                </span>
-              </div>
-              <p className="report-card-title">{r.title}</p>
-              <div className="report-card-themes">
-                {r.contentJson?.stats?.topThemes?.slice(0, 3).map((t) => (
-                  <span key={t.name} className="badge badge-plain">
-                    {t.name}
-                  </span>
-                ))}
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+        <ReportFilters
+          search={search}
+          setSearch={setSearch}
+          type={type}
+          setType={setType}
+          status={status}
+          setStatus={setStatus}
+          reportTypes={reportTypes}
+          reportStatus={reportStatus}
+          onClear={clearFilters}
+        />
 
-      <Modal
-        open={open}
-        onClose={() => !generating && setOpen(false)}
-        title="Generate a Voice-of-Customer report"
-        footer={
-          <>
-            <button className="btn btn-secondary" onClick={() => setOpen(false)} disabled={generating}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={generate} disabled={generating}>
-              {generating ? "Generating…" : "Generate"}
-            </button>
-          </>
-        }
-      >
-        <p className="text-body-muted" style={{ fontSize: 13.5, lineHeight: 1.6 }}>
-          LOOP will summarize top themes, sentiment shifts, and representative quotes from the last 7 days,
-          grounded strictly in your workspace's actual feedback.
-        </p>
-      </Modal>
+        <ReportsTable
+          reports={filteredReports}
+          onPreview={handlePreview}
+          onDownload={handleDownload}
+        />
 
-      <Modal open={!!active} onClose={() => setActive(null)} title={active?.title}>
-        {active && (
-          <div className="stack gap-4">
-            <p className="text-meta">
-              {new Date(active.periodStart).toLocaleDateString()} – {new Date(active.periodEnd).toLocaleDateString()}
-            </p>
-            <div>
-              <p className="text-eyebrow report-detail-label">Top themes</p>
-              <div className="row-wrap gap-2">
-                {active.contentJson?.stats?.topThemes?.map((t) => (
-                  <span key={t.name} className="badge badge-violet">
-                    {t.name} · {t.count}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <p className="report-detail-narrative">{active.contentJson?.narrative}</p>
-            {active.contentJson?.recommendedActions?.length > 0 && (
-              <div>
-                <p className="text-eyebrow report-detail-label">Recommended actions</p>
-                <ul className="report-detail-actions">
-                  {active.contentJson.recommendedActions.map((a, i) => (
-                    <li key={i}>{a}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
-    </div>
+        <ReportPreview report={selectedReport} />
+
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+        />
+      </PageContainer>
+    </DashboardLayout>
   );
 }

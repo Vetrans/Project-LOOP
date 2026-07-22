@@ -1,0 +1,34 @@
+export default function CompanyLogo({ name }) {
+  return (
+    <div
+      className="
+      flex
+      h-16
+      min-w-[170px]
+      items-center
+      justify-center
+      rounded-2xl
+      border
+      border-white/10
+      bg-white/5
+      backdrop-blur-xl
+      transition-all
+      duration-300
+      hover:border-[#32E6A4]/40
+      hover:bg-white/10
+      hover:-translate-y-1
+    "
+    >
+      <span
+        className="
+        text-lg
+        font-semibold
+        tracking-wide
+        text-white/80
+      "
+      >
+        {name}
+      </span>
+    </div>
+  );
+}

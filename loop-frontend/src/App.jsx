@@ -1,49 +1,40 @@
-import { Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout";
-import { ProtectedRoute, RequirePermission } from "./components/RouteGuards";
-import Landing from "./pages/Landing";
-import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/Signup";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+
+import LandingPage from "./pages/LandingPage";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import Inbox from "./pages/Inbox";
-import Trends from "./pages/Trends";
-import AskLoop from "./pages/AskLoop";
+import Feedback from "./pages/Feedback";
+import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
+import AskLoop from "./pages/AskLoop";
+import Team from "./pages/Team";
 import Settings from "./pages/Settings";
-import { NotFound, Forbidden } from "./pages/StatusPages";
 
-export default function App() {
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen bg-[#0B1212]" />;
+  return user ? children : <Navigate to="/login" replace />;
+}
+
+function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forbidden" element={<Forbidden />} />
-
-      <Route
-        path="/app"
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="inbox" element={<Inbox />} />
-        <Route path="trends" element={<Trends />} />
-        <Route path="ask" element={<AskLoop />} />
-        <Route path="reports" element={<Reports />} />
-        <Route
-          path="settings"
-          element={
-            <RequirePermission permission="manage_members">
-              <Settings />
-            </RequirePermission>
-          }
-        />
-      </Route>
-
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/ask-loop" element={<ProtectedRoute><AskLoop /></ProtectedRoute>} />
+        <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      </Routes>
+    </BrowserRouter>
   );
 }
+
+export default App;
