@@ -29,9 +29,10 @@ const signupSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
-// Sign-up creates a Workspace and a User; the creator becomes ADMIN.
-// This is the only route that creates a workspace — every other route
-// operates inside the workspace resolved from the caller's session.
+// Sign-up creates a Workspace and a User (ADMIN) but does NOT mark
+// onboarding complete — the frontend routes them to /onboarding next,
+// and ProtectedRoute enforces that they can't reach the dashboard
+// until PATCH /auth/onboarding below has run.
 router.post(
   "/signup",
   asyncHandler(async (req, res) => {
@@ -57,15 +58,13 @@ router.post(
     await user.save();
 
     const token = signToken(user);
-    res
-      .status(201)
-      .json({
-        token,
-        user: {
-          ...user.toSafeJSON(),
-          workspace: { id: ws._id, name: ws.name },
-        },
-      });
+    res.status(201).json({
+      token,
+      user: {
+        ...user.toSafeJSON(),
+        workspace: { id: ws._id, name: ws.name },
+      },
+    });
   }),
 );
 
@@ -106,9 +105,65 @@ router.get(
   }),
 );
 
-// Stateless JWTs — logout is handled client-side by discarding the
-// token. This endpoint exists so the frontend has a consistent call to
-// make and a place to add token revocation later if needed.
+const onboardingSchema = z.object({
+  profile: z.object({
+    name: z.string().min(1, "Name is required."),
+    phone: z.string().optional().default(""),
+    designation: z.string().optional().default(""),
+    department: z.string().optional().default(""),
+    avatarUrl: z.string().optional().default(""),
+  }),
+  organization: z.object({
+    company: z.string().min(1, "Organization name is required."),
+    timezone: z.string().optional().default("Asia/Kolkata"),
+    currency: z.string().optional().default("INR"),
+    dateFormat: z.string().optional().default("DD/MM/YYYY"),
+    language: z.string().optional().default("English"),
+    fiscalYear: z.string().optional().default("January - December"),
+  }),
+});
+
+/* PATCH /api/auth/onboarding — completes the mandatory post-signup
+ * onboarding flow. Saves profile + organization details and flips
+ * onboardingCompleted so ProtectedRoute stops redirecting this user
+ * here on every dashboard visit. */
+router.patch(
+  "/onboarding",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { profile, organization } = onboardingSchema.parse(req.body);
+
+    const user = await User.findById(req.user.id);
+    if (!user) throw new AppError("User not found.", 404);
+
+    user.name = profile.name;
+    user.phone = profile.phone;
+    user.designation = profile.designation;
+    user.department = profile.department;
+    user.avatarUrl = profile.avatarUrl;
+    user.onboardingCompleted = true;
+    await user.save();
+
+    const ws = await Workspace.findByIdAndUpdate(
+      req.user.workspaceId,
+      {
+        name: organization.company,
+        timezone: organization.timezone,
+        currency: organization.currency,
+        dateFormat: organization.dateFormat,
+        language: organization.language,
+        fiscalYear: organization.fiscalYear,
+      },
+      { new: true },
+    );
+
+    res.json({
+      ...user.toSafeJSON(),
+      workspace: { id: ws._id, name: ws.name },
+    });
+  }),
+);
+
 router.post("/logout", (req, res) => res.json({ ok: true }));
 
 export default router;

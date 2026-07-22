@@ -10,6 +10,11 @@ const workspaceSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    timezone: { type: String, default: "Asia/Kolkata" },
+    currency: { type: String, default: "INR" },
+    dateFormat: { type: String, default: "DD/MM/YYYY" },
+    language: { type: String, default: "English" },
+    fiscalYear: { type: String, default: "January - December" },
   },
   { timestamps: true },
 );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -9,9 +9,13 @@ import {
   LogOut,
 } from "lucide-react";
 
+// Toggles (twoFactor, loginAlerts) are controlled by props like the
+// rest of Settings. Password change is a real backend call now via
+// onChangePassword, not localStorage.
 export default function SecuritySettings({
   security,
   setSecurity,
+  onChangePassword,
 }) {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -22,26 +26,10 @@ export default function SecuritySettings({
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [strength, setStrength] = useState("");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("securitySettings");
-
-    if (saved) {
-      setSecurity(JSON.parse(saved));
-    }
-  }, [setSecurity]);
-
-  const saveSecurity = (updated) => {
-    setSecurity(updated);
-
-    localStorage.setItem(
-      "securitySettings",
-      JSON.stringify(updated)
-    );
-  };
+  const [changing, setChanging] = useState(false);
 
   const handleToggle = (field) => {
-    saveSecurity({
+    setSecurity({
       ...security,
       [field]: !security[field],
     });
@@ -69,7 +57,7 @@ export default function SecuritySettings({
     setStrength(calculateStrength(value));
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword.trim()) {
       toast.error("Please enter your current password.");
       return;
@@ -85,17 +73,24 @@ export default function SecuritySettings({
       return;
     }
 
-    localStorage.setItem(
-      "accountPassword",
-      newPassword
-    );
+    setChanging(true);
 
-    toast.success("Password changed successfully!");
+    try {
+      await onChangePassword({ currentPassword, newPassword });
 
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setStrength("Weak");
+      toast.success("Password changed successfully!");
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setStrength("");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Could not change password."
+      );
+    } finally {
+      setChanging(false);
+    }
   };
 
   const logoutDevices = () => {
@@ -113,14 +108,12 @@ export default function SecuritySettings({
     newPassword === confirmPassword;
 
   return (
-        <motion.div
+    <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
       className="rounded-3xl border border-[#173331] bg-[#101C1B] p-6 shadow-lg"
     >
-      {/* Header */}
-
       <div className="mb-8 flex items-center gap-3">
         <div className="rounded-xl bg-[#32E6A4]/15 p-3">
           <ShieldCheck className="h-6 w-6 text-[#32E6A4]" />
@@ -136,8 +129,6 @@ export default function SecuritySettings({
           </p>
         </div>
       </div>
-
-      {/* Password Fields */}
 
       <div className="space-y-5">
 
@@ -164,8 +155,6 @@ export default function SecuritySettings({
           visible={showConfirm}
           toggle={() => setShowConfirm(!showConfirm)}
         />
-
-        {/* Password Strength */}
 
         <div>
 
@@ -204,7 +193,7 @@ export default function SecuritySettings({
              }`}
              />
              )}
-            </div> 
+            </div>
 
         </div>
 
@@ -223,8 +212,6 @@ export default function SecuritySettings({
         )}
 
       </div>
-
-      {/* Security Toggles */}
 
       <div className="mt-8 space-y-5">
 
@@ -246,16 +233,15 @@ export default function SecuritySettings({
 
       </div>
 
-      {/* Action Buttons */}
-
       <div className="mt-8 flex flex-wrap gap-4">
 
         <button
           type="button"
           onClick={handleChangePassword}
-          className="rounded-xl bg-[#32E6A4] px-6 py-3 font-semibold text-black transition hover:scale-105"
+          disabled={changing}
+          className="rounded-xl bg-[#32E6A4] px-6 py-3 font-semibold text-black transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Change Password
+          {changing ? "Changing..." : "Change Password"}
         </button>
 
         <button
@@ -272,13 +258,8 @@ export default function SecuritySettings({
     </motion.div>
   );
 }
-function PasswordInput({
-  label,
-  value,
-  onChange,
-  visible,
-  toggle,
-}) {
+
+function PasswordInput({ label, value, onChange, visible, toggle }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-gray-300">
@@ -299,24 +280,14 @@ function PasswordInput({
           onClick={toggle}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-[#32E6A4]"
         >
-          {visible ? (
-            <EyeOff size={18} />
-          ) : (
-            <Eye size={18} />
-          )}
+          {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
     </div>
   );
 }
 
-function ToggleCard({
-  icon,
-  title,
-  subtitle,
-  checked,
-  onChange,
-}) {
+function ToggleCard({ icon, title, subtitle, checked, onChange }) {
   return (
     <div className="flex items-center justify-between rounded-2xl border border-[#173331] bg-[#0E1615] p-5 transition hover:border-[#32E6A4]/40">
 
@@ -342,18 +313,14 @@ function ToggleCard({
         type="button"
         onClick={onChange}
         className={`relative h-7 w-14 rounded-full transition ${
-          checked
-            ? "bg-[#32E6A4]"
-            : "bg-gray-600"
+          checked ? "bg-[#32E6A4]" : "bg-gray-600"
         }`}
       >
         <span
           className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 ${
-            checked 
-              ? "right-1" 
-              : "left-1"
-}`}
-/>
+            checked ? "right-1" : "left-1"
+          }`}
+        />
       </button>
 
     </div>

@@ -67,7 +67,8 @@ export default function RegisterForm() {
     try {
       await signup({ name: form.name, workspace: form.workspace, email: form.email, password: form.password });
       toast.success("Account created successfully!");
-      navigate("/dashboard");
+      // Part 2 of signup: mandatory onboarding, not the dashboard.
+      navigate("/onboarding");
     } catch (error) {
       toast.error(error.response?.data?.message || "Unable to create your account.");
     }

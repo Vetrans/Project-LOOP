@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import {
   Bell,
   Mail,
@@ -14,27 +12,11 @@ export default function NotificationSettings({
   notifications,
   setNotifications,
 }) {
-
-  useEffect(() => {
-    const saved = localStorage.getItem("notificationSettings");
-
-    if (saved) {
-      setNotifications(JSON.parse(saved));
-    }
-  }, []);
-
   const toggle = (field) => {
-    const updated = {
+    setNotifications({
       ...notifications,
       [field]: !notifications[field],
-    };
-
-    setNotifications(updated);
-
-    localStorage.setItem(
-      "notificationSettings",
-      JSON.stringify(updated)
-    );
+    });
   };
 
   return (

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Palette,
@@ -12,52 +11,24 @@ export default function AppearanceSettings({
   appearance,
   setAppearance,
 }) {
-  useEffect(() => {
-    const saved = localStorage.getItem("appearanceSettings");
-
-    if (saved) {
-      setAppearance(JSON.parse(saved));
-    }
-  }, []);
-
-  const saveAppearance = (updated) => {
-    setAppearance(updated);
-    localStorage.setItem(
-      "appearanceSettings",
-      JSON.stringify(updated)
-    );
-  };
-
   const updateField = (field, value) => {
-    saveAppearance({
+    setAppearance({
       ...appearance,
       [field]: value,
     });
   };
 
   const toggleCompact = () => {
-    saveAppearance({
+    setAppearance({
       ...appearance,
       compactMode: !appearance.compactMode,
     });
   };
 
   const themes = [
-    {
-      id: "Dark",
-      icon: <Moon size={20} />,
-      title: "Dark",
-    },
-    {
-      id: "Light",
-      icon: <Sun size={20} />,
-      title: "Light",
-    },
-    {
-      id: "System",
-      icon: <Monitor size={20} />,
-      title: "System",
-    },
+    { id: "Dark", icon: <Moon size={20} />, title: "Dark" },
+    { id: "Light", icon: <Sun size={20} />, title: "Light" },
+    { id: "System", icon: <Monitor size={20} />, title: "System" },
   ];
 
   const colors = [
@@ -101,9 +72,7 @@ export default function AppearanceSettings({
           {themes.map((theme) => (
             <button
               key={theme.id}
-              onClick={() =>
-                updateField("theme", theme.id)
-              }
+              onClick={() => updateField("theme", theme.id)}
               className={`rounded-2xl border p-5 transition ${
                 appearance.theme === theme.id
                   ? "border-[#32E6A4] bg-[#32E6A4]/10"
@@ -131,17 +100,13 @@ export default function AppearanceSettings({
           {colors.map((color) => (
             <button
               key={color}
-              onClick={() =>
-                updateField("accent", color)
-              }
+              onClick={() => updateField("accent", color)}
               className={`h-12 w-12 rounded-full border-4 transition ${
                 appearance.accent === color
                   ? "scale-110 border-white"
                   : "border-transparent"
               }`}
-              style={{
-                backgroundColor: color,
-              }}
+              style={{ backgroundColor: color }}
             />
           ))}
         </div>

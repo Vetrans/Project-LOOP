@@ -24,9 +24,6 @@ const THEMES = [
   { name: "Export & reporting", color: "#2DD9B9" },
 ];
 
-// Templated but varied sample content — enough real variety for AI
-// classification and Ask LOOP retrieval to behave meaningfully (brief
-// Appendix A + "seed data is mandatory", 120+ items).
 const TEMPLATES = [
   {
     text: "Onboarding took forever — I couldn't figure out how to invite my team.",
@@ -151,6 +148,11 @@ async function run() {
   const workspace = await Workspace.create({
     name: "Acme Corp",
     slug: "acme-corp",
+    timezone: "Asia/Kolkata",
+    currency: "USD",
+    dateFormat: "MM/DD/YYYY",
+    language: "English",
+    fiscalYear: "January - December",
   });
   console.log(
     `[seed] created workspace "${workspace.name}" (${workspace._id})`,
@@ -170,18 +172,24 @@ async function run() {
       email: "admin@acme-demo.com",
       role: "ADMIN",
       password: "Password123!",
+      designation: "Head of Customer Success",
+      department: "Customer Success",
     },
     {
       name: "Ana Analyst",
       email: "analyst@acme-demo.com",
       role: "ANALYST",
       password: "Password123!",
+      designation: "Product Analyst",
+      department: "Product",
     },
     {
       name: "Vic Viewer",
       email: "viewer@acme-demo.com",
       role: "VIEWER",
       password: "Password123!",
+      designation: "Support Lead",
+      department: "Support",
     },
   ];
   for (const u of users) {
@@ -190,6 +198,11 @@ async function run() {
       email: u.email,
       role: u.role,
       workspaceId: workspace._id,
+      designation: u.designation,
+      department: u.department,
+      // Seeded demo accounts skip onboarding entirely — they're meant
+      // to demo the dashboard immediately, not the signup funnel.
+      onboardingCompleted: true,
     });
     await user.setPassword(u.password);
     await user.save();
@@ -212,8 +225,6 @@ async function run() {
       .filter((name) => themeDocs[name])
       .map((name) => ({ themeId: themeDocs[name]._id, confidence: 0.8 }));
 
-    // Guarantee at least one theme link even if the classifier picked an
-    // unseeded name, so every item is drill-down-able from Trends.
     if (themeLinks.length === 0) {
       const fallback = pick(Object.values(themeDocs));
       themeLinks.push({ themeId: fallback._id, confidence: 0.5 });

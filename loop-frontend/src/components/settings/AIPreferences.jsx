@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import {
   BrainCircuit,
   Sparkles,
@@ -14,41 +12,18 @@ export default function AIPreferences({
   ai,
   setAI,
 }) {
-
-  useEffect(() => {
-    const saved = localStorage.getItem("aiPreferences");
-
-    if (saved) {
-      setAI(JSON.parse(saved));
-    }
-  }, []);
-
   const handleChange = (e) => {
-    const updated = {
+    setAI({
       ...ai,
       [e.target.name]: e.target.value,
-    };
-
-    setAI(updated);
-
-    localStorage.setItem(
-      "aiPreferences",
-      JSON.stringify(updated)
-    );
+    });
   };
 
   const toggle = (field) => {
-    const updated = {
+    setAI({
       ...ai,
       [field]: !ai[field],
-    };
-
-    setAI(updated);
-
-    localStorage.setItem(
-      "aiPreferences",
-      JSON.stringify(updated)
-    );
+    });
   };
 
   return (
@@ -58,8 +33,6 @@ export default function AIPreferences({
       transition={{ duration: 0.35 }}
       className="rounded-3xl border border-[#173331] bg-[#101C1B] p-6 shadow-lg"
     >
-      {/* Header */}
-
       <div className="mb-8 flex items-center gap-3">
 
         <div className="rounded-xl bg-[#32E6A4]/15 p-3">
@@ -79,8 +52,6 @@ export default function AIPreferences({
         </div>
 
       </div>
-
-      {/* Select Fields */}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
 
@@ -124,8 +95,6 @@ export default function AIPreferences({
         />
 
       </div>
-
-      {/* Toggles */}
 
       <div className="mt-8 space-y-5">
 

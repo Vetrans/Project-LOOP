@@ -1,6 +1,4 @@
-import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
 import {
   Building2,
   Globe,
@@ -10,31 +8,18 @@ import {
   Clock3,
 } from "lucide-react";
 
+// Fully controlled by props — no localStorage. "Company Name" is a
+// free-text field now (it used to be a fixed dropdown, which can't
+// represent whatever name the user actually signed up with).
 export default function OrganizationSettings({
   organization,
   setOrganization,
 }) {
-
-  useEffect(() => {
-    const saved = localStorage.getItem("organizationSettings");
-
-    if (saved) {
-      setOrganization(JSON.parse(saved));
-    }
-  }, []);
-
   const handleChange = (e) => {
-    const updated = {
+    setOrganization({
       ...organization,
       [e.target.name]: e.target.value,
-    };
-
-    setOrganization(updated);
-
-    localStorage.setItem(
-      "organizationSettings",
-      JSON.stringify(updated)
-    );
+    });
   };
 
   return (
@@ -44,10 +29,7 @@ export default function OrganizationSettings({
       transition={{ duration: 0.35 }}
       className="rounded-3xl border border-[#173331] bg-[#101C1B] p-6 shadow-lg"
     >
-      {/* Header */}
-
       <div className="mb-8 flex items-center gap-3">
-
         <div className="rounded-xl bg-[#32E6A4]/15 p-3">
           <Building2 className="h-6 w-6 text-[#32E6A4]" />
         </div>
@@ -61,22 +43,16 @@ export default function OrganizationSettings({
             Configure organization-wide preferences.
           </p>
         </div>
-
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
 
-        <SelectInput
+        <TextInput
           icon={<Building2 size={18} />}
           label="Company Name"
           name="company"
           value={organization.company || ""}
           onChange={handleChange}
-          options={[
-            "LOOP AI",
-            "Zidio Development",
-            "My Organization",
-          ]}
         />
 
         <SelectInput
@@ -149,6 +125,34 @@ export default function OrganizationSettings({
       </div>
 
     </motion.div>
+  );
+}
+
+function TextInput({
+  icon,
+  label,
+  name,
+  value,
+  onChange,
+}) {
+  return (
+    <div>
+      <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-300">
+        <span className="text-[#32E6A4]">
+          {icon}
+        </span>
+
+        {label}
+      </label>
+
+      <input
+        type="text"
+        name={name}
+        value={value}
+        onChange={onChange}
+        className="w-full rounded-xl border border-[#173331] bg-[#0E1615] px-4 py-3 text-white outline-none transition focus:border-[#32E6A4]"
+      />
+    </div>
   );
 }
 

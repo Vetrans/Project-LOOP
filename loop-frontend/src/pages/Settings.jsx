@@ -13,13 +13,18 @@ import AppearanceSettings from "../components/settings/AppearanceSettings";
 import OrganizationSettings from "../components/settings/OrganizationSettings";
 import SaveSettings from "../components/settings/SaveSettings";
 
+import { useAuth } from "../context/AuthContext";
+
 import {
   getSettings,
   saveSettings,
   resetSettings,
+  changePassword,
 } from "../services/settingsService";
 
 export default function Settings() {
+  const { updateUser } = useAuth();
+
   const [loading, setLoading] = useState(false);
 
   const [profile, setProfile] = useState({});
@@ -35,21 +40,24 @@ export default function Settings() {
     loadSettings();
   }, []);
 
+  const applySettings = (data) => {
+    setProfile(data.profile);
+    setSecurity(data.security);
+    setNotifications(data.notifications);
+    setAI(data.ai);
+    setAppearance(data.appearance);
+    setOrganization(data.organization);
+  };
+
   const loadSettings = async () => {
     setLoading(true);
 
     try {
       const data = await getSettings();
-
-      setProfile(data.profile);
-      setSecurity(data.security);
-      setNotifications(data.notifications);
-      setAI(data.ai);
-      setAppearance(data.appearance);
-      setOrganization(data.organization);
+      applySettings(data);
     } catch (error) {
       console.error("Error loading settings:", error);
-      toast.success("Failed to load settings.");
+      toast.error("Failed to load settings.");
     } finally {
       setLoading(false);
     }
@@ -59,7 +67,7 @@ export default function Settings() {
     setLoading(true);
 
     try {
-      await saveSettings({
+      const data = await saveSettings({
         profile,
         security,
         notifications,
@@ -68,19 +76,34 @@ export default function Settings() {
         organization,
       });
 
+      applySettings(data);
+
+      // Keep Topbar/Sidebar in sync with whatever just got saved,
+      // without a full page reload.
+      updateUser({
+        name: data.profile.name,
+        phone: data.profile.phone,
+        designation: data.profile.designation,
+        department: data.profile.department,
+        avatarUrl: data.profile.avatarUrl,
+        workspace: { name: data.organization.company },
+      });
+
       setLastSaved(new Date().toLocaleString());
 
       toast.success("Settings saved successfully!");
     } catch (error) {
       console.error("Save Error:", error);
-      toast.success("Failed to save settings.");
+      toast.error(
+        error.response?.data?.message || "Failed to save settings."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleRefresh = async () => {
-    loadSettings();
+    await loadSettings();
     toast.success("Settings refreshed.");
   };
 
@@ -107,23 +130,21 @@ export default function Settings() {
 
     try {
       const data = await resetSettings();
-
-      setProfile(data.profile);
-      setSecurity(data.security);
-      setNotifications(data.notifications);
-      setAI(data.ai);
-      setAppearance(data.appearance);
-      setOrganization(data.organization);
+      applySettings(data);
 
       setLastSaved("Never");
 
       toast.success("Settings reset successfully.");
     } catch (error) {
       console.error("Reset Error:", error);
-      toast.success("Failed to reset settings.");
+      toast.error("Failed to reset settings.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleChangePassword = async (payload) => {
+    await changePassword(payload);
   };
 
   return (
@@ -144,6 +165,7 @@ export default function Settings() {
           <SecuritySettings
             security={security}
             setSecurity={setSecurity}
+            onChangePassword={handleChangePassword}
           />
 
           <NotificationSettings

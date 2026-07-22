@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -10,51 +10,98 @@ import {
   User,
 } from "lucide-react";
 
-export default function ProfileSettings({
-  profile,
-  setProfile,
-}) {
+// Fully controlled by props.
+// Reused in Settings.jsx and Onboarding.jsx.
+export default function ProfileSettings({ profile, setProfile }) {
   const fileInputRef = useRef(null);
 
-  const [preview, setPreview] = useState("");
-
-  useEffect(() => {
-    const savedImage = localStorage.getItem("profileImage");
-
-    if (savedImage) {
-      setPreview(savedImage);
-    }
-  }, []);
-
   const handleChange = (e) => {
-    setProfile({
-      ...profile,
+    setProfile((prev) => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   const openFilePicker = () => {
-    fileInputRef.current.click();
+    fileInputRef.current?.click();
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
 
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.success("Please select an image.");
+      toast.error("Please select a valid image.");
       return;
     }
 
-    const reader = new FileReader();
+    // Prevent extremely large uploads
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Please select an image smaller than 10MB.");
+      return;
+    }
 
-    reader.onload = () => {
-      setPreview(reader.result);
-      localStorage.setItem("profileImage", reader.result);
+    const img = new Image();
+
+    img.onload = () => {
+      const MAX_SIZE = 256;
+
+      let width = img.width;
+      let height = img.height;
+
+      // Keep aspect ratio
+      if (width > height) {
+        if (width > MAX_SIZE) {
+          height = (height * MAX_SIZE) / width;
+          width = MAX_SIZE;
+        }
+      } else {
+        if (height > MAX_SIZE) {
+          width = (width * MAX_SIZE) / height;
+          height = MAX_SIZE;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+
+      canvas.width = Math.round(width);
+      canvas.height = Math.round(height);
+
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        toast.error("Unable to process image.");
+        return;
+      }
+
+      ctx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      // Compressed Base64 image
+      const compressedImage = canvas.toDataURL(
+        "image/jpeg",
+        0.8
+      );
+
+      setProfile((prev) => ({
+        ...prev,
+        avatarUrl: compressedImage,
+      }));
+
+      URL.revokeObjectURL(img.src);
     };
 
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      toast.error("Unable to process selected image.");
+    };
+
+    img.src = URL.createObjectURL(file);
   };
 
   return (
@@ -82,20 +129,21 @@ export default function ProfileSettings({
 
       <div className="mb-10 flex flex-col items-center">
         <div className="relative">
-          {preview ? (
+          {profile.avatarUrl ? (
             <img
-              src={preview}
+              src={profile.avatarUrl}
               alt="Profile"
               className="h-28 w-28 rounded-full object-cover border-4 border-[#32E6A4] shadow-xl"
             />
           ) : (
             <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-[#32E6A4] to-[#10B981] text-4xl font-bold text-black shadow-xl">
-              {profile.name
-                ?.split(" ")
+              {(profile.name || "")
+                .split(" ")
+                .filter(Boolean)
                 .map((n) => n[0])
                 .join("")
                 .substring(0, 2)
-                .toUpperCase()}
+                .toUpperCase() || "?"}
             </div>
           )}
 
@@ -140,6 +188,7 @@ export default function ProfileSettings({
           name="email"
           value={profile.email || ""}
           onChange={handleChange}
+          disabled
         />
 
         <InputField
@@ -178,6 +227,7 @@ function InputField({
   name,
   value,
   onChange,
+  disabled = false,
 }) {
   return (
     <div>
@@ -194,7 +244,8 @@ function InputField({
         name={name}
         value={value}
         onChange={onChange}
-        className="w-full rounded-xl border border-[#173331] bg-[#0E1615] px-4 py-3 text-white outline-none transition focus:border-[#32E6A4]"
+        disabled={disabled}
+        className="w-full rounded-xl border border-[#173331] bg-[#0E1615] px-4 py-3 text-white outline-none transition focus:border-[#32E6A4] disabled:cursor-not-allowed disabled:opacity-60"
       />
     </div>
   );

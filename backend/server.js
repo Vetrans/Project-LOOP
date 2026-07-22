@@ -14,6 +14,7 @@ import themeRoutes from "./src/routes/theme.routes.js";
 import insightRoutes from "./src/routes/insight.routes.js";
 import reportRoutes from "./src/routes/report.routes.js";
 import workspaceRoutes from "./src/routes/workspace.routes.js";
+import settingsRoutes from "./src/routes/settings.routes.js";
 
 const app = express();
 
@@ -23,7 +24,10 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json({ limit: "2mb" }));
+
+// Increased because onboarding sends avatar images as base64 data
+app.use(express.json({ limit: "10mb" }));
+
 app.use(morgan("dev"));
 
 app.get("/api/health", (req, res) =>
@@ -36,6 +40,7 @@ app.use("/api/themes", themeRoutes);
 app.use("/api/insights", insightRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/workspace", workspaceRoutes);
+app.use("/api/settings", settingsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

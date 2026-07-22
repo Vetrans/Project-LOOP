@@ -1,54 +1,21 @@
-import {
-  profileData,
-  securityData,
-  notificationData,
-  aiPreferenceData,
-  appearanceData,
-  organizationData,
-} from "../data/settingsData";
+import api from "./api";
 
-const STORAGE_KEY = "loop-ai-settings";
+export async function getSettings() {
+  const { data } = await api.get("/settings");
+  return data;
+}
 
-const defaultSettings = {
-  profile: profileData,
-  security: securityData,
-  notifications: notificationData,
-  ai: aiPreferenceData,
-  appearance: appearanceData,
-  organization: organizationData,
-};
+export async function saveSettings(payload) {
+  const { data } = await api.put("/settings", payload);
+  return data;
+}
 
-export const getSettings = async () => {
-  const saved = localStorage.getItem(STORAGE_KEY);
+export async function resetSettings() {
+  const { data } = await api.post("/settings/reset");
+  return data;
+}
 
-  if (saved) {
-    return JSON.parse(saved);
-  }
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(defaultSettings)
-  );
-
-  return defaultSettings;
-};
-
-export const saveSettings = async (settings) => {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(settings)
-  );
-
-  return {
-    success: true,
-  };
-};
-
-export const resetSettings = async () => {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(defaultSettings)
-  );
-
-  return defaultSettings;
-};
+export async function changePassword(payload) {
+  const { data } = await api.post("/settings/change-password", payload);
+  return data;
+}
