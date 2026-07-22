@@ -136,7 +136,7 @@ export default function ProfileSettings({ profile, setProfile }) {
               className="h-28 w-28 rounded-full object-cover border-4 border-[#32E6A4] shadow-xl"
             />
           ) : (
-            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-[#32E6A4] to-[#10B981] text-4xl font-bold text-black shadow-xl">
+            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-linear-to-br from-[#32E6A4] to-[#10B981] text-4xl font-bold text-black shadow-xl">
               {(profile.name || "")
                 .split(" ")
                 .filter(Boolean)
