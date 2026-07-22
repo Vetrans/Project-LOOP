@@ -3,15 +3,15 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Button from "../common/Button";
 
-export default function Navbar() {
+export default function Navbar({ activeSection, onNavigate }) {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const links = [
-    { name: "Features", href: "#features" },
-    { name: "Workflow", href: "#workflow" },
-    { name: "Pricing", href: "#pricing" },
-    { name: "FAQ", href: "#faq" },
+    { name: "Features", key: "features" },
+    { name: "Workflow", key: "workflow" },
+    { name: "Pricing", key: "pricing" },
+    { name: "FAQ", key: "faq" },
   ];
 
   useEffect(() => {
@@ -23,6 +23,12 @@ export default function Navbar() {
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleNavigate = (key) => {
+    onNavigate(key);
+    setOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <header className="fixed left-0 top-0 z-50 w-full">
@@ -36,8 +42,9 @@ export default function Navbar() {
         >
           {/* Logo */}
 
-          <a
-            href="#home"
+          <button
+            type="button"
+            onClick={() => handleNavigate("home")}
             className="flex items-center gap-3 text-xl font-bold text-white"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#32E6A4] text-black">
@@ -48,19 +55,24 @@ export default function Navbar() {
               LOOP
               <span className="text-[#32E6A4]"> AI</span>
             </span>
-          </a>
+          </button>
 
           {/* Desktop */}
 
           <nav className="hidden gap-8 lg:flex">
             {links.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-sm text-white/70 transition hover:text-[#32E6A4]"
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => handleNavigate(item.key)}
+                className={`text-sm transition hover:text-[#32E6A4] ${
+                  activeSection === item.key
+                    ? "text-[#32E6A4]"
+                    : "text-white/70"
+                }`}
               >
                 {item.name}
-              </a>
+              </button>
             ))}
           </nav>
 
@@ -93,13 +105,18 @@ export default function Navbar() {
           <div className="mt-3 rounded-3xl border border-white/10 bg-[#101C1B] p-6 lg:hidden">
             <div className="flex flex-col gap-5">
               {links.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => handleNavigate(item.key)}
+                  className={`text-left transition hover:text-[#32E6A4] ${
+                    activeSection === item.key
+                      ? "text-[#32E6A4]"
+                      : "text-white"
+                  }`}
                 >
                   {item.name}
-                </a>
+                </button>
               ))}
 
               <Link to="/login">
