@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageContainer from "../components/layout/PageContainer";
@@ -14,6 +15,9 @@ import DeleteConfirmModal from "../components/team/DeleteConfirmModal";
 import {
   getTeamSummary,
   getTeamMembers,
+  createMember,
+  updateMember,
+  deleteMember,
 } from "../services/teamService";
 
 import {
@@ -27,29 +31,18 @@ export default function Team() {
   const [members, setMembers] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [search, setSearch] = useState("");
-
   const [role, setRole] = useState("All");
-
   const [department, setDepartment] = useState("All");
-
   const [status, setStatus] = useState("All");
 
-  const [selectedMember, setSelectedMember] =
-    useState(null);
-
-  const [drawerOpen, setDrawerOpen] =
-    useState(false);
-
-  const [showModal, setShowModal] =
-    useState(false);
-
-  const [editingMember, setEditingMember] =
-    useState(null);
-
-  const [deleteMember, setDeleteMember] =
-    useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -59,60 +52,43 @@ export default function Team() {
     setLoading(true);
 
     try {
-      const summaryData =
-        await getTeamSummary();
-
-      const membersData =
-        await getTeamMembers();
+      const [summaryData, membersData] = await Promise.all([
+        getTeamSummary(),
+        getTeamMembers(),
+      ]);
 
       setSummary(summaryData);
-
       setMembers(membersData);
     } catch (error) {
       console.error(error);
+      toast.error("Could not load team data.");
     } finally {
       setLoading(false);
     }
   };
 
+  const refreshSummary = async () => {
+    try {
+      setSummary(await getTeamSummary());
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
-
       const matchesSearch =
-        member.name
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
+        member.name.toLowerCase().includes(search.toLowerCase()) ||
+        member.email.toLowerCase().includes(search.toLowerCase());
 
-        member.email
-          .toLowerCase()
-          .includes(search.toLowerCase());
-
-      const matchesRole =
-        role === "All" ||
-        member.role === role;
-
+      const matchesRole = role === "All" || member.role === role;
       const matchesDepartment =
-        department === "All" ||
-        member.department === department;
+        department === "All" || member.department === department;
+      const matchesStatus = status === "All" || member.status === status;
 
-      const matchesStatus =
-        status === "All" ||
-        member.status === status;
-
-      return (
-        matchesSearch &&
-        matchesRole &&
-        matchesDepartment &&
-        matchesStatus
-      );
+      return matchesSearch && matchesRole && matchesDepartment && matchesStatus;
     });
-  }, [
-    members,
-    search,
-    role,
-    department,
-    status,
-  ]);
+  }, [members, search, role, department, status]);
 
   const clearFilters = () => {
     setSearch("");
@@ -120,7 +96,8 @@ export default function Team() {
     setDepartment("All");
     setStatus("All");
   };
-    const handleView = (member) => {
+
+  const handleView = (member) => {
     setSelectedMember(member);
     setDrawerOpen(true);
   };
@@ -135,79 +112,57 @@ export default function Team() {
     setShowModal(true);
   };
 
-  const handleSaveMember = (formData) => {
+  const handleSaveMember = async (formData) => {
+    setSaving(true);
 
-    if (editingMember) {
+    try {
+      if (editingMember) {
+        const updated = await updateMember(editingMember.id, formData);
+        setMembers((prev) =>
+          prev.map((member) =>
+            member.id === editingMember.id ? updated : member,
+          ),
+        );
+        toast.success("Team member updated.");
+      } else {
+        const created = await createMember(formData);
+        setMembers((prev) => [created, ...prev]);
+        toast.success("Team member added.");
+      }
 
-      setMembers((prev) =>
-        prev.map((member) =>
-          member.id === editingMember.id
-            ? {
-                ...member,
-                ...formData,
-              }
-            : member
-        )
+      setShowModal(false);
+      setEditingMember(null);
+      await refreshSummary();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Could not save team member.",
       );
-
-    } else {
-
-      const newMember = {
-
-        id: Date.now(),
-
-        avatar: "",
-
-        name: formData.name,
-
-        email: formData.email,
-
-        phone: formData.phone,
-
-        role: formData.role,
-
-        department: formData.department,
-
-        status: formData.status,
-
-        joined: new Date().toLocaleDateString(),
-
-        projects: 0,
-
-        performance: 100,
-
-        lastActive: "Just Now",
-
-      };
-
-      setMembers((prev) => [
-        newMember,
-        ...prev,
-      ]);
-
+    } finally {
+      setSaving(false);
     }
-
-    setShowModal(false);
-    setEditingMember(null);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    try {
+      await deleteMember(deleteTarget.id);
 
-    setMembers((prev) =>
-      prev.filter(
-        (member) =>
-          member.id !== deleteMember.id
-      )
-    );
+      setMembers((prev) =>
+        prev.filter((member) => member.id !== deleteTarget.id),
+      );
 
-    setDeleteMember(null);
+      if (selectedMember && selectedMember.id === deleteTarget.id) {
+        setSelectedMember(null);
+        setDrawerOpen(false);
+      }
 
-    if (
-      selectedMember &&
-      selectedMember.id === deleteMember.id
-    ) {
-      setSelectedMember(null);
-      setDrawerOpen(false);
+      toast.success("Team member removed.");
+      await refreshSummary();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Could not delete team member.",
+      );
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -219,30 +174,23 @@ export default function Team() {
     return (
       <DashboardLayout>
         <PageContainer>
-
           <div className="flex h-[70vh] items-center justify-center">
-
             <div className="text-center">
-
               <div className="mx-auto h-16 w-16 animate-spin rounded-full border-4 border-[#173331] border-t-[#32E6A4]" />
-
               <h2 className="mt-6 text-2xl font-semibold text-white">
                 Loading Team...
               </h2>
-
               <p className="mt-2 text-gray-400">
                 Please wait while we load your members.
               </p>
-
             </div>
-
           </div>
-
         </PageContainer>
       </DashboardLayout>
     );
   }
-    return (
+
+  return (
     <DashboardLayout>
       <PageContainer>
         <TeamHeader
@@ -289,7 +237,7 @@ export default function Team() {
             members={filteredMembers}
             onView={handleView}
             onEdit={handleEditMember}
-            onDelete={setDeleteMember}
+            onDelete={setDeleteTarget}
           />
         )}
 
@@ -313,9 +261,9 @@ export default function Team() {
         />
 
         <DeleteConfirmModal
-          open={!!deleteMember}
-          member={deleteMember}
-          onClose={() => setDeleteMember(null)}
+          open={!!deleteTarget}
+          member={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
           onDelete={handleDelete}
         />
       </PageContainer>

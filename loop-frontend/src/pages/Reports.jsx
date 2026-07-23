@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageContainer from "../components/layout/PageContainer";
@@ -13,7 +14,8 @@ import ExportModal from "../components/reports/ExportModal";
 import {
   getReportSummary,
   getReports,
-  exportReport,
+  generateReport,
+  downloadReport,
 } from "../services/reportsService";
 
 import {
@@ -32,6 +34,7 @@ export default function Reports() {
   const [status, setStatus] = useState("All");
 
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
 
   const [showExportModal, setShowExportModal] = useState(false);
 
@@ -54,6 +57,7 @@ export default function Reports() {
       }
     } catch (error) {
       console.error(error);
+      toast.error("Could not load reports.");
     } finally {
       setLoading(false);
     }
@@ -65,11 +69,8 @@ export default function Reports() {
         report.name.toLowerCase().includes(search.toLowerCase()) ||
         report.createdBy.toLowerCase().includes(search.toLowerCase());
 
-      const matchesType =
-        type === "All" || report.type === type;
-
-      const matchesStatus =
-        status === "All" || report.status === status;
+      const matchesType = type === "All" || report.type === type;
+      const matchesStatus = status === "All" || report.status === status;
 
       return matchesSearch && matchesType && matchesStatus;
     });
@@ -86,21 +87,36 @@ export default function Reports() {
   };
 
   const handleDownload = (report) => {
-    console.log("Download:", report);
-
-    alert(
-      `Downloading "${report.name}" will work after backend integration.`
-    );
+    downloadReport(report);
   };
 
-  const handleExport = async (format) => {
-    await exportReport(format);
+  const handleGenerate = async () => {
+    setGenerating(true);
 
+    try {
+      const report = await generateReport(7);
+      setReports((prev) => [report, ...prev]);
+      setSelectedReport(report);
+      toast.success("Report generated from your workspace's feedback.");
+      const summaryData = await getReportSummary();
+      setSummary(summaryData);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Could not generate report.",
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleExport = (format) => {
+    if (!selectedReport) {
+      toast.error("Select a report to export first.");
+      return;
+    }
+
+    downloadReport(selectedReport);
     setShowExportModal(false);
-
-    alert(
-      `${format.toUpperCase()} export will be available after backend integration.`
-    );
   };
 
   if (loading) {
@@ -121,6 +137,8 @@ export default function Reports() {
         <ReportsHeader
           onRefresh={loadReports}
           onExport={() => setShowExportModal(true)}
+          onGenerate={handleGenerate}
+          generating={generating}
         />
 
         <ReportSummaryCards summary={summary} />

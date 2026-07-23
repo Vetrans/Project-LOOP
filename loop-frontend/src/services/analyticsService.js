@@ -1,64 +1,44 @@
-import {
-  overviewStats,
-  feedbackTrend,
-  sentimentData,
-  categoryData,
-  ratingDistribution,
-  aiInsights,
-} from "../data/analyticsData";
-
-/*
-=========================================
-Analytics Service
-
-Only this file will communicate
-with the backend.
-
-When backend is ready,
-replace the mock functions
-with axios API calls.
-
-UI components won't change.
-=========================================
-*/
+import api from "./api";
 
 export const getOverviewStats = async () => {
-  return overviewStats;
+  const { data } = await api.get("/analytics/overview");
+  return data;
 };
 
 export const getFeedbackTrend = async () => {
-  return feedbackTrend;
+  const { data } = await api.get("/analytics/trend");
+  return data;
 };
 
 export const getSentimentData = async () => {
-  return sentimentData;
+  const { data } = await api.get("/analytics/sentiment");
+  return data;
 };
 
 export const getCategoryData = async () => {
-  return categoryData;
+  const { data } = await api.get("/analytics/categories");
+  return data;
 };
 
 export const getRatingDistribution = async () => {
-  return ratingDistribution;
+  const { data } = await api.get("/analytics/ratings");
+  return data;
 };
 
 export const getAIInsights = async () => {
-  return aiInsights;
+  const { data } = await api.get("/analytics/insights");
+  return data;
 };
+
 /*
 =========================================
-Analytics Export
-
-Future Backend API
-
-GET /api/analytics/export?type=pdf
-GET /api/analytics/export?type=excel
-GET /api/analytics/export?type=csv
+Real server-side PDF/Excel/CSV rendering isn't built yet — that's a
+separate feature. Analytics.jsx already tells the user this plainly
+("...will work after backend integration"), so this stays a no-op
+rather than faking a success.
 =========================================
 */
-
 export const exportAnalytics = async (type) => {
-  console.log("Export Analytics:", type);
-
-  return true;
+  console.warn(`Analytics export to ${type} is not implemented yet.`);
+  return false;
 };

@@ -9,11 +9,10 @@ const reportSchema = new mongoose.Schema(
       index: true,
     },
     title: { type: String, required: true },
+    type: { type: String, default: "Voice of Customer" },
+    status: { type: String, enum: ["Completed", "Failed"], default: "Completed" },
     periodStart: { type: Date, required: true },
     periodEnd: { type: Date, required: true },
-    // Pre-computed real stats + the AI-written narrative around them —
-    // never the other way around (see brief §9.3: numbers are computed in
-    // code first, Claude only writes the prose, so figures can't drift).
     contentJson: {
       stats: {
         totalItems: Number,

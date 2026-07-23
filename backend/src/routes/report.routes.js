@@ -12,13 +12,58 @@ import { writeReportNarrative } from "../utils/ai.js";
 const router = Router();
 router.use(requireAuth);
 
+function present(report) {
+  return {
+    id: report._id,
+    name: report.title,
+    type: report.type,
+    status: report.status,
+    createdBy: report.generatedBy?.name || "Unknown",
+    date: new Date(report.createdAt).toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+    periodStart: report.periodStart,
+    periodEnd: report.periodEnd,
+    contentJson: report.contentJson,
+  };
+}
+
+/* GET /api/reports/summary — registered before "/:id" to avoid route
+ * collision, same pattern as feedback.routes.js's /stats. */
+router.get(
+  "/summary",
+  asyncHandler(async (req, res) => {
+    const workspaceId = req.user.workspaceId;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [total, today, week, month] = await Promise.all([
+      Report.countDocuments({ workspaceId }),
+      Report.countDocuments({ workspaceId, createdAt: { $gte: startOfToday } }),
+      Report.countDocuments({ workspaceId, createdAt: { $gte: weekAgo } }),
+      Report.countDocuments({ workspaceId, createdAt: { $gte: startOfMonth } }),
+    ]);
+
+    res.json([
+      { id: 1, title: "Total Reports", value: total, change: "All time" },
+      { id: 2, title: "Generated Today", value: today, change: "Since midnight" },
+      { id: 3, title: "This Week", value: week, change: "Last 7 days" },
+      { id: 4, title: "This Month", value: month, change: "Since the 1st" },
+    ]);
+  }),
+);
+
 router.get(
   "/",
   asyncHandler(async (req, res) => {
     const reports = await Report.find({ workspaceId: req.user.workspaceId })
-      .sort({ createdAt: -1 })
-      .lean();
-    res.json(reports);
+      .populate("generatedBy", "name")
+      .sort({ createdAt: -1 });
+    res.json(reports.map(present));
   }),
 );
 
@@ -28,9 +73,9 @@ router.get(
     const report = await Report.findOne({
       _id: req.params.id,
       workspaceId: req.user.workspaceId,
-    });
+    }).populate("generatedBy", "name");
     if (!report) throw new AppError("Report not found.", 404);
-    res.json(report);
+    res.json(present(report));
   }),
 );
 
@@ -38,8 +83,9 @@ const generateSchema = z.object({
   days: z.number().int().min(1).max(90).optional().default(7),
 });
 
-/* POST /api/reports/generate — AI4: pre-compute real stats in code
- * first, then ask Claude to write only the narrative around them. */
+/* POST /api/reports/generate — pre-compute real stats, then ask Claude
+ * to write only the narrative around them (unchanged logic), now
+ * returning the shape the frontend actually expects. */
 router.post(
   "/generate",
   requireRole("ADMIN", "ANALYST"),
@@ -48,12 +94,8 @@ router.post(
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
 
     const periodEnd = new Date();
-    const periodStart = new Date(
-      periodEnd.getTime() - days * 24 * 60 * 60 * 1000,
-    );
-    const prevStart = new Date(
-      periodStart.getTime() - days * 24 * 60 * 60 * 1000,
-    );
+    const periodStart = new Date(periodEnd.getTime() - days * 24 * 60 * 60 * 1000);
+    const prevStart = new Date(periodStart.getTime() - days * 24 * 60 * 60 * 1000);
 
     const [current, previous] = await Promise.all([
       Feedback.find({
@@ -70,14 +112,10 @@ router.post(
 
     const totalItems = current.length;
     const negCount = current.filter((f) => f.sentiment === "NEG").length;
-    const pctNegative = totalItems
-      ? Math.round((negCount / totalItems) * 100)
-      : 0;
+    const pctNegative = totalItems ? Math.round((negCount / totalItems) * 100) : 0;
 
     const prevNeg = previous.filter((f) => f.sentiment === "NEG").length;
-    const prevPct = previous.length
-      ? Math.round((prevNeg / previous.length) * 100)
-      : 0;
+    const prevPct = previous.length ? Math.round((prevNeg / previous.length) * 100) : 0;
     const sentimentDelta = pctNegative - prevPct;
 
     const themeCounts = new Map();
@@ -102,16 +140,10 @@ router.post(
         customerLabel: f.customerLabel,
       }));
 
-    const stats = {
-      totalItems,
-      pctNegative,
-      sentimentDelta,
-      topThemes,
-      sampleQuotes,
-    };
+    const stats = { totalItems, pctNegative, sentimentDelta, topThemes, sampleQuotes };
     const { narrative, recommendedActions } = writeReportNarrative(stats);
 
-    const report = await Report.create({
+    let report = await Report.create({
       workspaceId: req.user.workspaceId,
       title: `Voice of Customer — ${periodStart.toLocaleDateString()} to ${periodEnd.toLocaleDateString()}`,
       periodStart,
@@ -120,7 +152,8 @@ router.post(
       generatedBy: req.user.id,
     });
 
-    res.status(201).json(report);
+    report = await report.populate("generatedBy", "name");
+    res.status(201).json(present(report));
   }),
 );
 

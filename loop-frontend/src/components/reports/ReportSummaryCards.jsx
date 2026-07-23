@@ -3,22 +3,21 @@ import {
   FileText,
   CalendarDays,
   Clock3,
-  CheckCircle2,
   TrendingUp,
 } from "lucide-react";
 
 const iconMap = {
   "Total Reports": FileText,
   "Generated Today": CalendarDays,
-  "Scheduled Reports": Clock3,
-  "Export Success": CheckCircle2,
+  "This Week": Clock3,
+  "This Month": TrendingUp,
 };
 
 const colorMap = {
   "Total Reports": "from-cyan-500 to-blue-500",
   "Generated Today": "from-emerald-500 to-green-500",
-  "Scheduled Reports": "from-violet-500 to-purple-500",
-  "Export Success": "from-yellow-500 to-orange-500",
+  "This Week": "from-violet-500 to-purple-500",
+  "This Month": "from-yellow-500 to-orange-500",
 };
 
 export default function ReportSummaryCards({ summary }) {
@@ -60,15 +59,9 @@ export default function ReportSummaryCards({ summary }) {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-emerald-400" />
-
-              <span className="font-semibold text-emerald-400">
-                {item.change}
-              </span>
-
+            <div className="mt-6">
               <span className="text-sm text-gray-500">
-                vs last month
+                {item.change}
               </span>
             </div>
           </motion.div>
