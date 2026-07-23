@@ -1,4 +1,3 @@
-````md
 # 🚀 LOOP — AI Customer Feedback Intelligence Platform
 
 ![React](https://img.shields.io/badge/React-Frontend-blue)
