@@ -8,7 +8,7 @@ import Theme from "../models/Theme.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/roles.js";
 import { asyncHandler, AppError } from "../utils/AppError.js";
-import { classifyFeedback } from "../utils/ai.js";
+import { classifyFeedbackWithAI } from "../utils/ai.js";
 import { embedText } from "../utils/embeddings.js";
 
 const router = Router();
@@ -26,6 +26,7 @@ const CHANNELS = [
   "Sales call note",
   "Community post",
 ];
+
 
 /* GET /api/feedback/stats — powers the Analytics Dashboard (C5): total
  * items, % negative, new this week, weekly volume, and sentiment split.

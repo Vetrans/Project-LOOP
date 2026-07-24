@@ -18,7 +18,8 @@ in the Node/Express backend. This service:
 
 Run with: uvicorn main:app --reload --port 8000
 """
-
+import json
+import re as _re
 import hashlib
 import math
 import os
@@ -59,6 +60,25 @@ if ANTHROPIC_API_KEY:
 
     anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
+
+def call_claude_json(prompt: str, max_tokens: int = 600) -> Optional[dict]:
+    """Calls Claude, strips stray markdown fences, and parses JSON.
+    Returns None (never raises) if the model is unavailable or the
+    response can't be parsed — callers are responsible for retrying."""
+    if anthropic_client is None:
+        return None
+
+    try:
+        response = anthropic_client.messages.create(
+            model=ANTHROPIC_MODEL,
+            max_tokens=max_tokens,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = "".join(b.text for b in response.content if b.type == "text").strip()
+        cleaned = _re.sub(r"^```(json)?|```$", "", text, flags=_re.MULTILINE).strip()
+        return json.loads(cleaned)
+    except Exception:
+        return None
 
 # --------------------------------------------------------------------- #
 # Embeddings — MUST match backend/src/utils/embeddings.js exactly (same
@@ -101,6 +121,27 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
 # --------------------------------------------------------------------- #
 # Request / response models
 # --------------------------------------------------------------------- #
+
+class ClassifyRequest(BaseModel):
+    content: str
+    existing_themes: List[str] = []
+
+
+class ClassifyResponse(BaseModel):
+    sentiment: str
+    sentimentScore: float
+    themes: List[str]
+    featureArea: str
+    rationale: str
+
+
+class ReportNarrativeRequest(BaseModel):
+    stats: dict
+
+
+class ReportNarrativeResponse(BaseModel):
+    narrative: str
+    recommendedActions: List[str]
 class AskRequest(BaseModel):
     workspace_id: str
     question: str
