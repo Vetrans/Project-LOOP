@@ -7,7 +7,7 @@ import Report from "../models/Report.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireRole } from "../middleware/roles.js";
 import { asyncHandler, AppError } from "../utils/AppError.js";
-import { writeReportNarrative } from "../utils/ai.js";
+import { writeReportNarrativeWithAI } from "../utils/ai.js";
 
 const router = Router();
 router.use(requireAuth);
