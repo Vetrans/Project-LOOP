@@ -130,7 +130,9 @@ async function classifyAndSave(doc, workspaceId) {
   return doc;
 }
 
-/* GET /api/feedback — paginated, searchable, filterable inbox */
+/* GET /api/feedback — paginated, searchable, filterable inbox.
+ * Filters: search (full-text on content), channel, sentiment, status,
+ * theme (Theme _id), and date range (startDate/endDate on createdAt). */
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -140,15 +142,34 @@ router.get(
       sentiment = "",
       status = "",
       theme = "",
+      startDate = "",
+      endDate = "",
       page = 1,
       limit = 20,
     } = req.query;
+
     const filter = { workspaceId: req.user.workspaceId };
     if (search) filter.$text = { $search: search };
     if (channel) filter.channel = channel;
     if (sentiment) filter.sentiment = sentiment;
     if (status) filter.status = status;
     if (theme) filter["themes.themeId"] = new mongoose.Types.ObjectId(theme);
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        if (!Number.isNaN(start.getTime())) filter.createdAt.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        if (!Number.isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999); // inclusive of the whole end day
+          filter.createdAt.$lte = end;
+        }
+      }
+      if (Object.keys(filter.createdAt).length === 0) delete filter.createdAt;
+    }
 
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.min(100, parseInt(limit, 10) || 20);
@@ -167,7 +188,7 @@ router.get(
       items,
       total,
       page: pageNum,
-      pages: Math.ceil(total / limitNum),
+      pages: Math.max(1, Math.ceil(total / limitNum)),
     });
   }),
 );
@@ -248,12 +269,10 @@ const simulateSchema = z.object({
 });
 
 /* POST /api/feedback/simulate — seeds realistic feedback items to mimic
- * a live integration pulling from a channel (brief C3: "at least one
- * 'channel' button seeds realistic items to simulate an integration").
- * Real third-party integrations are explicitly out of scope (brief
- * §04.2) — this is the sanctioned stand-in. Each created item goes
- * through the exact same AI1 classification pipeline as manual/CSV
- * entries, so it behaves identically to a "real" incoming item. */
+ * a live integration pulling from a channel (brief C3). Real third-party
+ * integrations are explicitly out of scope (brief §04.2) — this is the
+ * sanctioned stand-in. Each created item goes through the exact same
+ * AI1 classification pipeline as manual/CSV entries. */
 router.post(
   "/simulate",
   requireRole("ADMIN", "ANALYST"),
@@ -282,7 +301,7 @@ const statusSchema = z.object({
   status: z.enum(["NEW", "REVIEWED", "ACTIONED"]),
 });
 
-/* PATCH /api/feedback/:id/status */
+/* PATCH /api/feedback/:id/status — inline status change (NEW → REVIEWED → ACTIONED) */
 router.patch(
   "/:id/status",
   requireRole("ADMIN", "ANALYST"),
