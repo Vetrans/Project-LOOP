@@ -6,8 +6,14 @@ import FeedbackHeader from "../components/feedback/FeedbackHeader";
 import FeedbackFilters from "../components/feedback/FeedbackFilters";
 import FeedbackTable from "../components/feedback/FeedbackTable";
 import AddFeedbackModal from "../components/feedback/AddFeedbackModal";
+import UploadCSV from "../components/feedback/UploadCSV";
+import SimulateChannelModal from "../components/feedback/SimulateChannelModal";
 import { exportFeedbackCSV } from "../utils/exportCSV";
-import { addFeedback, getFeedback } from "../services/feedbackService";
+import {
+  addFeedback,
+  getFeedback,
+  simulateChannel,
+} from "../services/feedbackService";
 
 const sentimentLabel = { POS: "Positive", NEU: "Neutral", NEG: "Negative" };
 const statusLabel = { NEW: "Pending", REVIEWED: "In Review", ACTIONED: "Resolved" };
@@ -28,7 +34,10 @@ export default function Feedback() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sentiment, setSentiment] = useState("All Sentiments");
   const [category, setCategory] = useState("All Categories");
+
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showSimulateModal, setShowSimulateModal] = useState(false);
 
   async function loadFeedback() {
     try {
@@ -58,10 +67,41 @@ export default function Feedback() {
     }
   }
 
+  // Passed straight to SimulateChannelModal, which shows its own
+  // toast/loading state and expects the raw response back so it can
+  // report exactly how many items were created.
+  async function handleSimulate(channel, count) {
+    const result = await simulateChannel(channel, count);
+    loadFeedback();
+    return result;
+  }
+
   return <DashboardLayout><PageContainer title="Feedback Management" subtitle="Manage and analyze customer feedback.">
-    <FeedbackHeader onAdd={() => setShowAddModal(true)} onExport={() => exportFeedbackCSV(filteredFeedback)} />
+    <FeedbackHeader
+      onAdd={() => setShowAddModal(true)}
+      onExport={() => exportFeedbackCSV(filteredFeedback)}
+      onUpload={() => setShowUploadModal(true)}
+      onSimulate={() => setShowSimulateModal(true)}
+    />
     <FeedbackFilters {...{ searchTerm, setSearchTerm, sentiment, setSentiment, category, setCategory }} />
     <div className="mt-6"><FeedbackTable feedback={filteredFeedback} /></div>
-    <AddFeedbackModal open={showAddModal} onClose={() => setShowAddModal(false)} onSave={handleCreate} />
+
+    <AddFeedbackModal
+      open={showAddModal}
+      onClose={() => setShowAddModal(false)}
+      onSave={handleCreate}
+    />
+
+    <UploadCSV
+      open={showUploadModal}
+      onClose={() => setShowUploadModal(false)}
+      onSuccess={loadFeedback}
+    />
+
+    <SimulateChannelModal
+      open={showSimulateModal}
+      onClose={() => setShowSimulateModal(false)}
+      onSimulate={handleSimulate}
+    />
   </PageContainer></DashboardLayout>;
 }

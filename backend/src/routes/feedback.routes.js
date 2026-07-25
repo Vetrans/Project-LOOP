@@ -10,6 +10,7 @@ import { requireRole } from "../middleware/roles.js";
 import { asyncHandler, AppError } from "../utils/AppError.js";
 import { classifyFeedbackWithAI } from "../utils/ai.js";
 import { embedText } from "../utils/embeddings.js";
+import { simulateFeedbackItems } from "../utils/simulatedChannels.js";
 
 const router = Router();
 const upload = multer({
@@ -27,6 +28,10 @@ const CHANNELS = [
   "Community post",
 ];
 
+
+/* GET /api/feedback/stats — powers the Analytics Dashboard (C5): total
+ * items, % negative, new this week, weekly volume, and sentiment split.
+ * Registered before "/:id"-style routes below to avoid route collision. */
 router.get(
   "/stats",
   asyncHandler(async (req, res) => {
@@ -51,9 +56,12 @@ router.get(
         ]),
       ]);
 
-    const pctNegative = totalItems ? Math.round((negCount / totalItems) * 100) : 0;
+    const pctNegative = totalItems
+      ? Math.round((negCount / totalItems) * 100)
+      : 0;
     const sentimentMap = { POS: 0, NEU: 0, NEG: 0 };
-    for (const row of sentimentAgg) if (row._id) sentimentMap[row._id] = row.count;
+    for (const row of sentimentAgg)
+      if (row._id) sentimentMap[row._id] = row.count;
 
     res.json({
       totalItems,
@@ -69,9 +77,13 @@ router.get(
   }),
 );
 
+// Resolves theme name strings to Theme docs within the caller's
+// workspace, reusing existing themes instead of creating near-duplicates
+// (mirrors the AI1 prompt instruction in utils/ai.js).
 async function resolveThemeLinks(workspaceId, themeNames) {
   const links = [];
   for (const name of themeNames) {
+    if (!name) continue;
     let theme = await Theme.findOne({ workspaceId, name });
     if (!theme) theme = await Theme.create({ workspaceId, name });
     links.push({ themeId: theme._id, confidence: 0.75 });
@@ -79,32 +91,46 @@ async function resolveThemeLinks(workspaceId, themeNames) {
   return links;
 }
 
-/* AI1 — real Claude classification via ai-service, Zod-validated in
- * ai.js before we ever get here. On failure (after one retry), the
- * item is saved with needsReview=true instead of a fake tag, so it
- * shows up in the inbox for a human to manually reclassify. */
+/* Runs AI1 (real Claude-backed classification, proxied through
+ * ai-service) and saves the result onto the doc. classifyFeedbackWithAI
+ * already retries once internally and never throws — on total failure
+ * it returns { needsReview: true, sentiment: null, ... }. Mongoose's
+ * Feedback schema enforces sentiment as an enum of POS/NEU/NEG, so we
+ * never write a null/invalid value onto the document; instead we mark
+ * it clearly as needing manual review and leave it classifiable again
+ * later via the manual re-classify endpoint below. */
 async function classifyAndSave(doc, workspaceId) {
-  const existingThemes = await Theme.find({ workspaceId }).select("name").lean();
+  const existingThemes = await Theme.find({ workspaceId })
+    .select("name")
+    .lean();
+
   const result = await classifyFeedbackWithAI(
     doc.content,
     existingThemes.map((t) => t.name),
   );
 
-  doc.sentiment = result.sentiment;
-  doc.sentimentScore = result.sentimentScore;
-  doc.featureArea = result.featureArea;
-  doc.classificationRationale = result.rationale;
-  doc.needsReview = result.needsReview;
-
-  if (!result.needsReview) {
+  if (result.needsReview) {
+    doc.sentiment = "NEU";
+    doc.sentimentScore = 0;
+    doc.featureArea = "Unclassified";
+    doc.classificationRationale = result.rationale;
+    doc.needsReview = true;
+    doc.themes = await resolveThemeLinks(workspaceId, ["Needs manual review"]);
+  } else {
+    doc.sentiment = result.sentiment;
+    doc.sentimentScore = result.sentimentScore;
+    doc.featureArea = result.featureArea;
+    doc.classificationRationale = result.rationale;
+    doc.needsReview = false;
     doc.themes = await resolveThemeLinks(workspaceId, result.themes);
-    doc.embedding = embedText(doc.content);
   }
 
+  doc.embedding = embedText(doc.content);
   await doc.save();
   return doc;
 }
 
+/* GET /api/feedback — paginated, searchable, filterable inbox */
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -152,6 +178,7 @@ const createSchema = z.object({
   customerLabel: z.string().optional().default(""),
 });
 
+/* POST /api/feedback — single-entry ingestion, classified on ingest (AI1) */
 router.post(
   "/",
   requireRole("ADMIN", "ANALYST"),
@@ -167,6 +194,7 @@ router.post(
   }),
 );
 
+/* POST /api/feedback/import — CSV bulk upload (brief columns: content, channel, customer_label, created_at) */
 router.post(
   "/import",
   requireRole("ADMIN", "ANALYST"),
@@ -187,10 +215,12 @@ router.post(
     for (const [i, row] of rows.entries()) {
       try {
         const parsedRow = createSchema
-          .extend({ channel: z.string() })
+          .extend({ channel: z.string() }) // validate loosely, then normalize below
           .parse({
             content: row.content,
-            channel: CHANNELS.includes(row.channel) ? row.channel : "Community post",
+            channel: CHANNELS.includes(row.channel)
+              ? row.channel
+              : "Community post",
             customerLabel: row.customer_label || "",
           });
 
@@ -212,10 +242,47 @@ router.post(
   }),
 );
 
+const simulateSchema = z.object({
+  channel: z.enum(CHANNELS),
+  count: z.number().int().min(1).max(20).optional().default(5),
+});
+
+/* POST /api/feedback/simulate — seeds realistic feedback items to mimic
+ * a live integration pulling from a channel (brief C3: "at least one
+ * 'channel' button seeds realistic items to simulate an integration").
+ * Real third-party integrations are explicitly out of scope (brief
+ * §04.2) — this is the sanctioned stand-in. Each created item goes
+ * through the exact same AI1 classification pipeline as manual/CSV
+ * entries, so it behaves identically to a "real" incoming item. */
+router.post(
+  "/simulate",
+  requireRole("ADMIN", "ANALYST"),
+  asyncHandler(async (req, res) => {
+    const { channel, count } = simulateSchema.parse(req.body);
+    const picks = simulateFeedbackItems(channel, count);
+
+    const created = [];
+    for (const pick of picks) {
+      let doc = await Feedback.create({
+        content: pick.content,
+        channel,
+        customerLabel: pick.customerLabel,
+        workspaceId: req.user.workspaceId,
+        status: "NEW",
+      });
+      doc = await classifyAndSave(doc, req.user.workspaceId);
+      created.push(doc);
+    }
+
+    res.status(201).json({ imported: created.length, items: created });
+  }),
+);
+
 const statusSchema = z.object({
   status: z.enum(["NEW", "REVIEWED", "ACTIONED"]),
 });
 
+/* PATCH /api/feedback/:id/status */
 router.patch(
   "/:id/status",
   requireRole("ADMIN", "ANALYST"),
@@ -231,6 +298,7 @@ router.patch(
   }),
 );
 
+/* POST /api/feedback/:id/reclassify — manual re-classify (AI1 acceptance criteria) */
 router.post(
   "/:id/reclassify",
   requireRole("ADMIN", "ANALYST"),
