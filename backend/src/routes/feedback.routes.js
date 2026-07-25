@@ -27,10 +27,6 @@ const CHANNELS = [
   "Community post",
 ];
 
-
-/* GET /api/feedback/stats — powers the Analytics Dashboard (C5): total
- * items, % negative, new this week, weekly volume, and sentiment split.
- * Registered before "/:id"-style routes below to avoid route collision. */
 router.get(
   "/stats",
   asyncHandler(async (req, res) => {
@@ -55,12 +51,9 @@ router.get(
         ]),
       ]);
 
-    const pctNegative = totalItems
-      ? Math.round((negCount / totalItems) * 100)
-      : 0;
+    const pctNegative = totalItems ? Math.round((negCount / totalItems) * 100) : 0;
     const sentimentMap = { POS: 0, NEU: 0, NEG: 0 };
-    for (const row of sentimentAgg)
-      if (row._id) sentimentMap[row._id] = row.count;
+    for (const row of sentimentAgg) if (row._id) sentimentMap[row._id] = row.count;
 
     res.json({
       totalItems,
@@ -76,9 +69,6 @@ router.get(
   }),
 );
 
-// Resolves theme name strings to Theme docs within the caller's
-// workspace, reusing existing themes instead of creating near-duplicates
-// (mirrors the AI1 prompt instruction in utils/ai.js).
 async function resolveThemeLinks(workspaceId, themeNames) {
   const links = [];
   for (const name of themeNames) {
@@ -89,11 +79,13 @@ async function resolveThemeLinks(workspaceId, themeNames) {
   return links;
 }
 
+/* AI1 — real Claude classification via ai-service, Zod-validated in
+ * ai.js before we ever get here. On failure (after one retry), the
+ * item is saved with needsReview=true instead of a fake tag, so it
+ * shows up in the inbox for a human to manually reclassify. */
 async function classifyAndSave(doc, workspaceId) {
-  const existingThemes = await Theme.find({ workspaceId })
-    .select("name")
-    .lean();
-  const result = classifyFeedback(
+  const existingThemes = await Theme.find({ workspaceId }).select("name").lean();
+  const result = await classifyFeedbackWithAI(
     doc.content,
     existingThemes.map((t) => t.name),
   );
@@ -102,13 +94,17 @@ async function classifyAndSave(doc, workspaceId) {
   doc.sentimentScore = result.sentimentScore;
   doc.featureArea = result.featureArea;
   doc.classificationRationale = result.rationale;
-  doc.themes = await resolveThemeLinks(workspaceId, result.themes);
-  doc.embedding = embedText(doc.content);
+  doc.needsReview = result.needsReview;
+
+  if (!result.needsReview) {
+    doc.themes = await resolveThemeLinks(workspaceId, result.themes);
+    doc.embedding = embedText(doc.content);
+  }
+
   await doc.save();
   return doc;
 }
 
-/* GET /api/feedback — paginated, searchable, filterable inbox */
 router.get(
   "/",
   asyncHandler(async (req, res) => {
@@ -156,7 +152,6 @@ const createSchema = z.object({
   customerLabel: z.string().optional().default(""),
 });
 
-/* POST /api/feedback — single-entry ingestion, classified on ingest (AI1) */
 router.post(
   "/",
   requireRole("ADMIN", "ANALYST"),
@@ -172,7 +167,6 @@ router.post(
   }),
 );
 
-/* POST /api/feedback/import — CSV bulk upload (brief columns: content, channel, customer_label, created_at) */
 router.post(
   "/import",
   requireRole("ADMIN", "ANALYST"),
@@ -193,12 +187,10 @@ router.post(
     for (const [i, row] of rows.entries()) {
       try {
         const parsedRow = createSchema
-          .extend({ channel: z.string() }) // validate loosely, then normalize below
+          .extend({ channel: z.string() })
           .parse({
             content: row.content,
-            channel: CHANNELS.includes(row.channel)
-              ? row.channel
-              : "Community post",
+            channel: CHANNELS.includes(row.channel) ? row.channel : "Community post",
             customerLabel: row.customer_label || "",
           });
 
@@ -224,7 +216,6 @@ const statusSchema = z.object({
   status: z.enum(["NEW", "REVIEWED", "ACTIONED"]),
 });
 
-/* PATCH /api/feedback/:id/status */
 router.patch(
   "/:id/status",
   requireRole("ADMIN", "ANALYST"),
@@ -240,7 +231,6 @@ router.patch(
   }),
 );
 
-/* POST /api/feedback/:id/reclassify — manual re-classify (AI1 acceptance criteria) */
 router.post(
   "/:id/reclassify",
   requireRole("ADMIN", "ANALYST"),
