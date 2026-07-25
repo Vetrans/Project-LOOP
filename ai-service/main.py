@@ -1,37 +1,29 @@
 """
-LOOP ai-service — Ask LOOP (AI3), grounded Q&A.
+LOOP ai-service — the ONLY component in the whole app that calls the
+Anthropic API. Everything else (auth, RBAC, feedback CRUD, CSV import)
+lives in the Node/Express backend, which forwards requests here.
 
-This is the ONLY component in the whole app that calls the Anthropic API.
-Everything else (auth, RBAC, feedback CRUD, classification, reports) lives
-in the Node/Express backend. This service:
-
-  1. Receives a workspace_id (resolved server-side by Node from the
-     caller's session — this service trusts Node, not the browser) and a
-     question.
-  2. Reads that workspace's Feedback documents straight from MongoDB
-     (read-only) and retrieves the top-K most relevant ones using local
-     embeddings + cosine similarity.
-  3. Calls Claude with ONLY those retrieved items as context, instructing
-     it to answer strictly from them.
-  4. Returns the answer plus the exact items used, so the caller can
-     verify it — grounding is mandatory, never invent a feedback item.
+Endpoints:
+  POST /classify          — AI1: sentiment + themes + feature area for one item
+  POST /report-narrative  — AI4: narrative + recommended actions around pre-computed stats
+  POST /ask                — AI3: retrieval-grounded Q&A over a workspace's feedback
+  GET  /health             — liveness + whether an Anthropic key is configured
 
 Run with: uvicorn main:app --reload --port 8000
 """
 import json
 import re as _re
-import hashlib
 import math
 import os
 import re
 from typing import List, Optional
 
-from bson import ObjectId # type: ignore
-from bson.errors import InvalidId # type: ignore
-from dotenv import load_dotenv # type: ignore
-from fastapi import FastAPI, HTTPException # type: ignore
-from starlette.middleware.cors import CORSMiddleware # type: ignore
-from pydantic import BaseModel  # type: ignore[import]
+from bson import ObjectId  # type: ignore
+from bson.errors import InvalidId  # type: ignore
+from dotenv import load_dotenv  # type: ignore
+from fastapi import FastAPI, HTTPException  # type: ignore
+from starlette.middleware.cors import CORSMiddleware  # type: ignore
+from pydantic import BaseModel, field_validator  # type: ignore[import]
 from pymongo import MongoClient  # type: ignore[import]
 
 load_dotenv()
@@ -56,7 +48,7 @@ db = mongo.get_default_database()
 
 anthropic_client = None
 if ANTHROPIC_API_KEY:
-    from anthropic import Anthropic # type: ignore
+    from anthropic import Anthropic  # type: ignore
 
     anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
 
@@ -64,7 +56,8 @@ if ANTHROPIC_API_KEY:
 def call_claude_json(prompt: str, max_tokens: int = 600) -> Optional[dict]:
     """Calls Claude, strips stray markdown fences, and parses JSON.
     Returns None (never raises) if the model is unavailable or the
-    response can't be parsed — callers are responsible for retrying."""
+    response can't be parsed — callers are responsible for falling
+    back gracefully."""
     if anthropic_client is None:
         return None
 
@@ -79,6 +72,7 @@ def call_claude_json(prompt: str, max_tokens: int = 600) -> Optional[dict]:
         return json.loads(cleaned)
     except Exception:
         return None
+
 
 # --------------------------------------------------------------------- #
 # Embeddings — MUST match backend/src/utils/embeddings.js exactly (same
@@ -134,6 +128,20 @@ class ClassifyResponse(BaseModel):
     featureArea: str
     rationale: str
 
+    @field_validator("sentiment")
+    @classmethod
+    def sentiment_must_be_valid(cls, v: str) -> str:
+        if v not in ("POS", "NEU", "NEG"):
+            raise ValueError("sentiment must be one of POS, NEU, NEG")
+        return v
+
+    @field_validator("sentimentScore")
+    @classmethod
+    def score_in_range(cls, v: float) -> float:
+        if v < -1 or v > 1:
+            raise ValueError("sentimentScore must be between -1 and 1")
+        return v
+
 
 class ReportNarrativeRequest(BaseModel):
     stats: dict
@@ -142,6 +150,8 @@ class ReportNarrativeRequest(BaseModel):
 class ReportNarrativeResponse(BaseModel):
     narrative: str
     recommendedActions: List[str]
+
+
 class AskRequest(BaseModel):
     workspace_id: str
     question: str
@@ -164,6 +174,155 @@ class AskResponse(BaseModel):
 def health():
     return {"ok": True, "service": "loop-ai-service", "anthropic_configured": bool(anthropic_client)}
 
+
+# --------------------------------------------------------------------- #
+# AI1 — Structured classification
+# --------------------------------------------------------------------- #
+
+def _heuristic_classify(content: str, existing_themes: List[str]) -> dict:
+    """Local, dependency-free fallback used only when Claude is
+    unavailable or returns something that fails validation. Keeps the
+    endpoint returning a valid, schema-conformant response either way,
+    so callers never have to special-case a missing AI key."""
+    lower = content.lower()
+    neg_words = ["broken", "slow", "timeout", "confusing", "hate", "terrible",
+                 "bug", "fail", "worst", "frustrat", "crash", "missing", "waiting"]
+    pos_words = ["love", "great", "gorgeous", "fast", "amazing", "excellent",
+                 "saved", "improvement", "thank", "helpful", "smooth"]
+
+    neg_hits = sum(1 for w in neg_words if w in lower)
+    pos_hits = sum(1 for w in pos_words if w in lower)
+
+    if pos_hits > neg_hits:
+        sentiment, score = "POS", min(0.9, 0.3 + pos_hits * 0.2)
+    elif neg_hits > pos_hits:
+        sentiment, score = "NEG", -min(0.9, 0.3 + neg_hits * 0.2)
+    else:
+        sentiment, score = "NEU", 0.0
+
+    theme = next(
+        (t for t in existing_themes if t.split(" ")[0].lower() in lower),
+        None,
+    ) or (
+        "Onboarding friction" if "onboard" in lower else
+        "Billing & invoices" if "bill" in lower or "invoice" in lower else
+        "Mobile experience" if "mobile" in lower or "app" in lower else
+        "SSO / security" if "sso" in lower or "security" in lower else
+        "Export & reporting" if "export" in lower or "report" in lower else
+        "General feedback"
+    )
+
+    return {
+        "sentiment": sentiment,
+        "sentimentScore": round(score, 2),
+        "themes": [theme],
+        "featureArea": theme,
+        "rationale": "Rule-based fallback classification (Claude unavailable or returned an invalid response).",
+    }
+
+
+@app.post("/classify", response_model=ClassifyResponse)
+def classify(req: ClassifyRequest):
+    if len(req.content.strip()) < 1:
+        raise HTTPException(status_code=422, detail="Feedback content is required.")
+
+    prompt = (
+        "Classify this piece of customer feedback. Return ONLY JSON, no markdown fences, "
+        "no commentary, matching exactly this shape:\n"
+        '{"sentiment": "POS" | "NEU" | "NEG", "sentimentScore": number between -1 and 1, '
+        '"themes": [string, ...], "featureArea": string, "rationale": string (one line)}\n\n'
+        "Reuse one of these existing theme names if the feedback genuinely fits one of them, "
+        "rather than inventing a near-duplicate:\n"
+        f"{json.dumps(req.existing_themes)}\n\n"
+        f"Feedback:\n\"\"\"\n{req.content}\n\"\"\""
+    )
+
+    parsed = call_claude_json(prompt, max_tokens=400)
+
+    if parsed is not None:
+        try:
+            return ClassifyResponse(**parsed)
+        except Exception:
+            # Claude responded but not in the exact required shape —
+            # retry once with a stricter reminder before giving up.
+            retry_prompt = prompt + (
+                "\n\nYour previous response was not valid JSON in the exact required shape. "
+                "Return ONLY the raw JSON object this time, nothing else."
+            )
+            parsed_retry = call_claude_json(retry_prompt, max_tokens=400)
+            if parsed_retry is not None:
+                try:
+                    return ClassifyResponse(**parsed_retry)
+                except Exception:
+                    pass
+
+    # Claude unavailable (no API key) or failed validation twice —
+    # fall back to the heuristic so the caller still gets a valid,
+    # demoable classification instead of a 500.
+    return ClassifyResponse(**_heuristic_classify(req.content, req.existing_themes))
+
+
+# --------------------------------------------------------------------- #
+# AI4 — Voice-of-Customer report narrative
+# --------------------------------------------------------------------- #
+
+@app.post("/report-narrative", response_model=ReportNarrativeResponse)
+def report_narrative(req: ReportNarrativeRequest):
+    stats = req.stats
+
+    prompt = (
+        "You are writing the narrative section of a Voice-of-Customer report. "
+        "Use ONLY the numbers and facts given below — never invent a statistic, quote, "
+        "or theme that isn't present in this data. Return ONLY JSON, no markdown fences, "
+        "matching exactly this shape:\n"
+        '{"narrative": string (3-5 sentences), "recommendedActions": [string, ...] (2-4 items)}\n\n'
+        f"Stats:\n{json.dumps(stats, default=str)}"
+    )
+
+    parsed = call_claude_json(prompt, max_tokens=600)
+
+    if parsed is not None:
+        try:
+            return ReportNarrativeResponse(**parsed)
+        except Exception:
+            pass
+
+    # Fallback: template narrative built directly from the same stats
+    # object, so report generation never hard-fails without an API key.
+    top_themes = stats.get("topThemes") or []
+    total_items = stats.get("totalItems", 0)
+    pct_negative = stats.get("pctNegative", 0)
+    sentiment_delta = stats.get("sentimentDelta", 0)
+    trend_word = "worsened" if sentiment_delta > 0 else "improved" if sentiment_delta < 0 else "held steady"
+
+    if top_themes:
+        top = top_themes[0]
+        others = ", ".join(f'"{t["name"]}"' for t in top_themes[1:3]) or "other themes"
+        narrative = (
+            f"Over this period the workspace logged {total_items} feedback item"
+            f"{'' if total_items == 1 else 's'}, {pct_negative}% negative — sentiment has "
+            f"{trend_word} versus the prior period. The leading theme was \"{top['name']}\" "
+            f"with {top['count']} mention{'' if top['count'] == 1 else 's'}, ahead of {others}. "
+            f"(Fallback narrative — ANTHROPIC_API_KEY not configured or unavailable.)"
+        )
+    else:
+        narrative = (
+            "No feedback was logged in this period. "
+            "(Fallback narrative — ANTHROPIC_API_KEY not configured or unavailable.)"
+        )
+
+    recommended_actions = [
+        f"Investigate and address \"{t['name']}\" — it's a top driver of this period's "
+        f"feedback ({t['count']} mentions)."
+        for t in top_themes[:3]
+    ]
+
+    return ReportNarrativeResponse(narrative=narrative, recommendedActions=recommended_actions)
+
+
+# --------------------------------------------------------------------- #
+# AI3 — Retrieval-grounded Q&A
+# --------------------------------------------------------------------- #
 
 @app.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):

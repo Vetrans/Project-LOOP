@@ -11,6 +11,7 @@ import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import AskLoop from "./pages/AskLoop";
 import Team from "./pages/Team";
+import Members from "./pages/Members";
 import Settings from "./pages/Settings";
 
 function ProtectedRoute({ children }) {
@@ -58,6 +59,7 @@ function App() {
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/ask-loop" element={<ProtectedRoute><AskLoop /></ProtectedRoute>} />
         <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+        <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>

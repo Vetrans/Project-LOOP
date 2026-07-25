@@ -6,6 +6,7 @@ import {
   Bot,
   FileText,
   Users,
+  ShieldCheck,
   Settings,
 } from "lucide-react";
 
@@ -16,6 +17,7 @@ const links = [
   { name: "Ask LOOP", icon: Bot, path: "/ask-loop" },
   { name: "Reports", icon: FileText, path: "/reports" },
   { name: "Team", icon: Users, path: "/team" },
+  { name: "Members", icon: ShieldCheck, path: "/members" },
   { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
