@@ -9,7 +9,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-export default function FeedbackTrendChart({ data }) {
+export default function FeedbackTrendChart({ data, rangeLabel }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 25 }}
@@ -19,11 +19,11 @@ export default function FeedbackTrendChart({ data }) {
     >
       <div className="mb-6">
         <h2 className="text-xl font-bold text-white">
-          Monthly Feedback Trend
+          Feedback Trend
         </h2>
 
         <p className="mt-1 text-sm text-gray-400">
-          Customer feedback received over the last 7 months.
+          Customer feedback volume over {rangeLabel || "the last 30 days"}.
         </p>
       </div>
 

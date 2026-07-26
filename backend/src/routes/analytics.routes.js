@@ -7,6 +7,37 @@ import { asyncHandler } from "../utils/AppError.js";
 const router = Router();
 router.use(requireAuth);
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/* Resolves a { start, end, prevStart, prevEnd } window from optional
+ * startDate/endDate query params (YYYY-MM-DD). Defaults to the last 30
+ * days when neither is given, so the dashboard is never silently
+ * scoped to "all time" by omission. prevStart/prevEnd is an
+ * equal-length preceding window, used for period-over-period deltas —
+ * this replaces the old hardcoded "last 7 days vs previous 7 days". */
+function resolveRange(query) {
+  const now = new Date();
+
+  let end = query.endDate ? new Date(query.endDate) : new Date(now);
+  if (Number.isNaN(end.getTime())) end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+
+  let start;
+  if (query.startDate) {
+    start = new Date(query.startDate);
+    if (Number.isNaN(start.getTime())) start = new Date(end.getTime() - 30 * DAY_MS);
+  } else {
+    start = new Date(end.getTime() - 30 * DAY_MS);
+  }
+  start.setHours(0, 0, 0, 0);
+
+  const spanMs = Math.max(end.getTime() - start.getTime(), DAY_MS);
+  const prevEnd = new Date(start.getTime() - 1);
+  const prevStart = new Date(prevEnd.getTime() - spanMs);
+
+  return { start, end, prevStart, prevEnd };
+}
+
 async function periodCounts(workspaceId, start, end) {
   const items = await Feedback.find({
     workspaceId,
@@ -17,27 +48,39 @@ async function periodCounts(workspaceId, start, end) {
   return { total: items.length, positive, negative };
 }
 
-/* GET /api/analytics/overview — real counts + real week-over-week
- * deltas, not hardcoded percentages. */
+/* GET /api/analytics/overview?startDate&endDate — real counts + real
+ * period-over-period deltas, scoped to the requested range. */
 router.get(
   "/overview",
   asyncHandler(async (req, res) => {
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const { start, end, prevStart, prevEnd } = resolveRange(req.query);
 
     const [current, previous, avgAgg, totalItems, totalPositive, totalNegative] =
       await Promise.all([
-        periodCounts(workspaceId, weekAgo, now),
-        periodCounts(workspaceId, twoWeeksAgo, weekAgo),
+        periodCounts(workspaceId, start, end),
+        periodCounts(workspaceId, prevStart, prevEnd),
         Feedback.aggregate([
-          { $match: { workspaceId, sentimentScore: { $ne: null } } },
+          {
+            $match: {
+              workspaceId,
+              createdAt: { $gte: start, $lte: end },
+              sentimentScore: { $ne: null },
+            },
+          },
           { $group: { _id: null, avg: { $avg: "$sentimentScore" } } },
         ]),
-        Feedback.countDocuments({ workspaceId }),
-        Feedback.countDocuments({ workspaceId, sentiment: "POS" }),
-        Feedback.countDocuments({ workspaceId, sentiment: "NEG" }),
+        Feedback.countDocuments({ workspaceId, createdAt: { $gte: start, $lte: end } }),
+        Feedback.countDocuments({
+          workspaceId,
+          createdAt: { $gte: start, $lte: end },
+          sentiment: "POS",
+        }),
+        Feedback.countDocuments({
+          workspaceId,
+          createdAt: { $gte: start, $lte: end },
+          sentiment: "NEG",
+        }),
       ]);
 
     const pctChange = (curr, prev) =>
@@ -82,47 +125,50 @@ router.get(
   }),
 );
 
-/* GET /api/analytics/trend?months=7 — real monthly feedback volume */
+/* GET /api/analytics/trend?startDate&endDate — real daily feedback
+ * volume across the requested range. Field names (`month`, `feedback`)
+ * are kept identical to before so FeedbackTrendChart.jsx (not touched
+ * here) keeps working unchanged — only the underlying scoping and
+ * grouping granularity changed, from a fixed "last N months" to the
+ * actual selected range, bucketed by day. */
 router.get(
   "/trend",
   asyncHandler(async (req, res) => {
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
-    const months = Math.min(12, parseInt(req.query.months, 10) || 7);
-    const since = new Date();
-    since.setMonth(since.getMonth() - months);
+    const { start, end } = resolveRange(req.query);
 
     const rows = await Feedback.aggregate([
-      { $match: { workspaceId, createdAt: { $gte: since } } },
+      { $match: { workspaceId, createdAt: { $gte: start, $lte: end } } },
       {
         $group: {
-          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
           count: { $sum: 1 },
         },
       },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
+      { $sort: { _id: 1 } },
     ]);
-
-    const monthNames = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ];
 
     res.json(
       rows.map((r) => ({
-        month: monthNames[r._id.month - 1],
+        month: new Date(r._id).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        }),
         feedback: r.count,
       })),
     );
   }),
 );
 
-/* GET /api/analytics/sentiment */
+/* GET /api/analytics/sentiment?startDate&endDate */
 router.get(
   "/sentiment",
   asyncHandler(async (req, res) => {
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
+    const { start, end } = resolveRange(req.query);
+
     const agg = await Feedback.aggregate([
-      { $match: { workspaceId } },
+      { $match: { workspaceId, createdAt: { $gte: start, $lte: end } } },
       { $group: { _id: "$sentiment", count: { $sum: 1 } } },
     ]);
     const map = { POS: 0, NEU: 0, NEG: 0 };
@@ -136,13 +182,22 @@ router.get(
   }),
 );
 
-/* GET /api/analytics/categories — real featureArea counts */
+/* GET /api/analytics/categories?startDate&endDate — real featureArea
+ * counts, now scoped to the requested range instead of all-time. */
 router.get(
   "/categories",
   asyncHandler(async (req, res) => {
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
+    const { start, end } = resolveRange(req.query);
+
     const agg = await Feedback.aggregate([
-      { $match: { workspaceId, featureArea: { $ne: null } } },
+      {
+        $match: {
+          workspaceId,
+          featureArea: { $ne: null },
+          createdAt: { $gte: start, $lte: end },
+        },
+      },
       { $group: { _id: "$featureArea", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 },
@@ -152,17 +207,20 @@ router.get(
   }),
 );
 
-/* GET /api/analytics/ratings — sentimentScore (-1..1) bucketed onto a
- * 1-5 star scale from real per-item scores. There's no literal star
- * rating in the schema, so this is a documented derivation, not
- * invented numbers. */
+/* GET /api/analytics/ratings?startDate&endDate — sentimentScore (-1..1)
+ * bucketed onto a 1-5 star scale from real per-item scores, scoped to
+ * the requested range. There's no literal star rating in the schema,
+ * so this is a documented derivation, not invented numbers. */
 router.get(
   "/ratings",
   asyncHandler(async (req, res) => {
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
+    const { start, end } = resolveRange(req.query);
+
     const items = await Feedback.find({
       workspaceId,
       sentimentScore: { $ne: null },
+      createdAt: { $gte: start, $lte: end },
     })
       .select("sentimentScore")
       .lean();
@@ -185,21 +243,27 @@ router.get(
   }),
 );
 
-/* GET /api/analytics/insights — generated from the real aggregates
- * computed above, not canned copy. */
+/* GET /api/analytics/insights?startDate&endDate — generated from the
+ * real aggregates computed above for the requested range, not canned
+ * copy. Wording says "this period" / "the prior period" rather than
+ * "this week" since the range is now user-selectable. */
 router.get(
   "/insights",
   asyncHandler(async (req, res) => {
     const workspaceId = new mongoose.Types.ObjectId(req.user.workspaceId);
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const { start, end, prevStart, prevEnd } = resolveRange(req.query);
 
     const [current, previous, topCategory] = await Promise.all([
-      periodCounts(workspaceId, weekAgo, now),
-      periodCounts(workspaceId, twoWeeksAgo, weekAgo),
+      periodCounts(workspaceId, start, end),
+      periodCounts(workspaceId, prevStart, prevEnd),
       Feedback.aggregate([
-        { $match: { workspaceId, featureArea: { $ne: null } } },
+        {
+          $match: {
+            workspaceId,
+            featureArea: { $ne: null },
+            createdAt: { $gte: start, $lte: end },
+          },
+        },
         { $group: { _id: "$featureArea", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 1 },
@@ -208,7 +272,7 @@ router.get(
 
     if (current.total === 0 && previous.total === 0) {
       return res.json([
-        "No feedback has been logged yet — insights will appear here once feedback starts coming in.",
+        "No feedback has been logged in this range yet — insights will appear once feedback starts coming in.",
       ]);
     }
 
@@ -221,13 +285,13 @@ router.get(
         : 0;
     insights.push(
       posDelta >= 0
-        ? `Positive feedback is up ${posDelta}% compared to the previous week.`
-        : `Positive feedback is down ${Math.abs(posDelta)}% compared to the previous week.`,
+        ? `Positive feedback is up ${posDelta}% compared to the prior period.`
+        : `Positive feedback is down ${Math.abs(posDelta)}% compared to the prior period.`,
     );
 
     if (topCategory[0]) {
       insights.push(
-        `"${topCategory[0]._id}" is the most frequently reported area, with ${topCategory[0].count} mentions.`,
+        `"${topCategory[0]._id}" is the most frequently reported area in this range, with ${topCategory[0].count} mentions.`,
       );
     }
 
@@ -238,8 +302,8 @@ router.get(
         : 0;
     insights.push(
       negDelta <= 0
-        ? `Negative feedback has decreased ${Math.abs(negDelta)}% week-over-week.`
-        : `Negative feedback has increased ${negDelta}% week-over-week — worth a closer look.`,
+        ? `Negative feedback has decreased ${Math.abs(negDelta)}% versus the prior period.`
+        : `Negative feedback has increased ${negDelta}% versus the prior period — worth a closer look.`,
     );
 
     res.json(insights);

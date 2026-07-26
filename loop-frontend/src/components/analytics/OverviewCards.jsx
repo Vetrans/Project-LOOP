@@ -22,7 +22,7 @@ const colorMap = {
   "Average Rating": "from-yellow-500 to-orange-500",
 };
 
-export default function OverviewCards({ stats }) {
+export default function OverviewCards({ stats, comparisonLabel = "vs previous period" }) {
   return (
     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((item, index) => {
@@ -80,7 +80,7 @@ export default function OverviewCards({ stats }) {
               </span>
 
               <span className="text-sm text-gray-500">
-                vs last month
+                {comparisonLabel}
               </span>
             </div>
           </motion.div>

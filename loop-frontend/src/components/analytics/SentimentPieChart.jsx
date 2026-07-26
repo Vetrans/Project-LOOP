@@ -14,7 +14,7 @@ const COLORS = [
   "#EF4444", // Negative
 ];
 
-export default function SentimentPieChart({ data }) {
+export default function SentimentPieChart({ data, rangeLabel }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 25 }}
@@ -28,7 +28,7 @@ export default function SentimentPieChart({ data }) {
         </h2>
 
         <p className="mt-1 text-sm text-gray-400">
-          Overall sentiment distribution based on customer feedback.
+          Sentiment distribution over {rangeLabel || "the last 30 days"}.
         </p>
       </div>
 

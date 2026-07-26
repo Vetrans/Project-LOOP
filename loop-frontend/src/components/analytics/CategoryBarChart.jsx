@@ -18,7 +18,7 @@ const COLORS = [
   "#EF4444",
 ];
 
-export default function CategoryBarChart({ data }) {
+export default function CategoryBarChart({ data, rangeLabel }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 25 }}
@@ -32,7 +32,7 @@ export default function CategoryBarChart({ data }) {
         </h2>
 
         <p className="mt-1 text-sm text-gray-400">
-          Most frequently reported customer issues.
+          Most frequently reported issues over {rangeLabel || "the last 30 days"}.
         </p>
       </div>
 

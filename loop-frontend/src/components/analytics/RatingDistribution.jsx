@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 
-export default function RatingDistribution({ data }) {
-  const maxCount = Math.max(...data.map((item) => item.count));
+export default function RatingDistribution({ data, rangeLabel }) {
+  // data can legitimately be empty when a selected date range has no
+  // feedback in it — Math.max(...[]) is -Infinity, which would make
+  // every bar width NaN below. Guard against that.
+  const maxCount = data.length ? Math.max(...data.map((item) => item.count)) : 0;
 
   return (
     <motion.div
@@ -17,7 +20,7 @@ export default function RatingDistribution({ data }) {
         </h2>
 
         <p className="mt-1 text-sm text-gray-400">
-          Breakdown of customer ratings from 1 to 5 stars.
+          Customer ratings from 1 to 5 stars, over {rangeLabel || "the last 30 days"}.
         </p>
       </div>
 
@@ -44,7 +47,7 @@ export default function RatingDistribution({ data }) {
               <motion.div
                 initial={{ width: 0 }}
                 animate={{
-                  width: `${(item.count / maxCount) * 100}%`,
+                  width: maxCount > 0 ? `${(item.count / maxCount) * 100}%` : "0%",
                 }}
                 transition={{
                   duration: 0.8,

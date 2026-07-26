@@ -1,32 +1,39 @@
 import api from "./api";
 
-export const getOverviewStats = async () => {
-  const { data } = await api.get("/analytics/overview");
+function buildParams({ startDate, endDate } = {}) {
+  const params = {};
+  if (startDate) params.startDate = startDate;
+  if (endDate) params.endDate = endDate;
+  return params;
+}
+
+export const getOverviewStats = async (range) => {
+  const { data } = await api.get("/analytics/overview", { params: buildParams(range) });
   return data;
 };
 
-export const getFeedbackTrend = async () => {
-  const { data } = await api.get("/analytics/trend");
+export const getFeedbackTrend = async (range) => {
+  const { data } = await api.get("/analytics/trend", { params: buildParams(range) });
   return data;
 };
 
-export const getSentimentData = async () => {
-  const { data } = await api.get("/analytics/sentiment");
+export const getSentimentData = async (range) => {
+  const { data } = await api.get("/analytics/sentiment", { params: buildParams(range) });
   return data;
 };
 
-export const getCategoryData = async () => {
-  const { data } = await api.get("/analytics/categories");
+export const getCategoryData = async (range) => {
+  const { data } = await api.get("/analytics/categories", { params: buildParams(range) });
   return data;
 };
 
-export const getRatingDistribution = async () => {
-  const { data } = await api.get("/analytics/ratings");
+export const getRatingDistribution = async (range) => {
+  const { data } = await api.get("/analytics/ratings", { params: buildParams(range) });
   return data;
 };
 
-export const getAIInsights = async () => {
-  const { data } = await api.get("/analytics/insights");
+export const getAIInsights = async (range) => {
+  const { data } = await api.get("/analytics/insights", { params: buildParams(range) });
   return data;
 };
 
