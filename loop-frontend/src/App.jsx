@@ -8,7 +8,9 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Feedback from "./pages/Feedback";
 import Analytics from "./pages/Analytics";
+import Trends from "./pages/Trends";
 import Reports from "./pages/Reports";
+import ReportDetail from "./pages/ReportDetail";
 import AskLoop from "./pages/AskLoop";
 import Team from "./pages/Team";
 import Members from "./pages/Members";
@@ -56,7 +58,9 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
         <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+        <Route path="/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/reports/:id" element={<ProtectedRoute><ReportDetail /></ProtectedRoute>} />
         <Route path="/ask-loop" element={<ProtectedRoute><AskLoop /></ProtectedRoute>} />
         <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
         <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />

@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   FileText,
   Sparkles,
   Calendar,
   User,
+  ListChecks,
+  ExternalLink,
 } from "lucide-react";
 
 export default function ReportPreview({ report }) {
@@ -26,6 +29,9 @@ export default function ReportPreview({ report }) {
     );
   }
 
+  const narrative = report.contentJson?.narrative;
+  const recommendedActions = report.contentJson?.recommendedActions || [];
+
   return (
     <motion.div
       key={report.id}
@@ -33,23 +39,33 @@ export default function ReportPreview({ report }) {
       animate={{ opacity: 1, y: 0 }}
       className="mt-8 rounded-3xl border border-white/10 bg-[#111827] p-6 shadow-xl"
     >
-      <div className="mb-6 flex items-center gap-3">
-        <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 p-4">
-          <FileText
-            className="text-white"
-            size={28}
-          />
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 p-4">
+            <FileText
+              className="text-white"
+              size={28}
+            />
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-white">
+              {report.name}
+            </h2>
+
+            <p className="text-gray-400">
+              Report Preview
+            </p>
+          </div>
         </div>
 
-        <div>
-          <h2 className="text-2xl font-bold text-white">
-            {report.name}
-          </h2>
-
-          <p className="text-gray-400">
-            Report Preview
-          </p>
-        </div>
+        <Link
+          to={`/reports/${report.id}`}
+          className="flex shrink-0 items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-2.5 text-sm font-medium text-cyan-400 transition hover:bg-cyan-500 hover:text-white"
+        >
+          <ExternalLink size={16} />
+          Open Full Report
+        </Link>
       </div>
 
       <div className="grid gap-5 md:grid-cols-3">
@@ -117,16 +133,34 @@ export default function ReportPreview({ report }) {
           </h3>
         </div>
 
-        <p className="leading-8 text-gray-300">
-          This report analyzes customer feedback collected during the
-          selected period. Overall customer satisfaction has improved,
-          while delivery performance continues to show positive growth.
-          Product quality remains consistent, and AI has detected
-          recurring themes related to packaging improvements and support
-          response times. These insights help management make informed
-          business decisions and prioritize future improvements.
+        <p className="whitespace-pre-wrap leading-8 text-gray-300">
+          {narrative || "This report doesn't have a generated narrative yet."}
         </p>
       </div>
+
+      {recommendedActions.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-white/10 bg-[#1f2937] p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <ListChecks
+              className="text-emerald-400"
+              size={20}
+            />
+
+            <h3 className="text-lg font-semibold text-white">
+              Recommended Actions
+            </h3>
+          </div>
+
+          <ul className="space-y-3">
+            {recommendedActions.map((action, index) => (
+              <li key={index} className="flex items-start gap-3 text-gray-300">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+                <span className="leading-6">{action}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </motion.div>
   );
 }

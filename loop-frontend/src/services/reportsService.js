@@ -10,6 +10,11 @@ export async function getReports() {
   return data;
 }
 
+export async function getReportById(id) {
+  const { data } = await api.get(`/reports/${id}`);
+  return data;
+}
+
 export async function generateReport(days = 7) {
   const { data } = await api.post("/reports/generate", { days });
   return data;
@@ -18,7 +23,8 @@ export async function generateReport(days = 7) {
 // Real PDF/Excel rendering isn't implemented yet — this exports the
 // report's actual saved content (title, AI narrative, recommended
 // actions) as a plain text file, so it's a genuine download of real
-// data rather than a fake "success" alert.
+// data rather than a fake "success" alert. For a true PDF, use the
+// "Open Full Report" page and its browser Print → Save as PDF action.
 export function downloadReport(report) {
   const lines = [
     report.name,

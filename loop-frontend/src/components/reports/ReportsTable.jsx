@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import {
   Download,
   Eye,
   FileText,
+  ExternalLink,
 } from "lucide-react";
 
 export default function ReportsTable({
@@ -10,6 +12,8 @@ export default function ReportsTable({
   onPreview,
   onDownload,
 }) {
+  const navigate = useNavigate();
+
   const getStatusStyle = (status) => {
     switch (status) {
       case "Completed":
@@ -125,13 +129,23 @@ export default function ReportsTable({
                   <div className="flex items-center justify-center gap-3">
                     <button
                       onClick={() => onPreview(report)}
+                      title="Preview inline"
                       className="rounded-xl bg-cyan-500/10 p-2 text-cyan-400 transition hover:bg-cyan-500 hover:text-white"
                     >
                       <Eye size={18} />
                     </button>
 
                     <button
+                      onClick={() => navigate(`/reports/${report.id}`)}
+                      title="Open shareable page"
+                      className="rounded-xl bg-purple-500/10 p-2 text-purple-400 transition hover:bg-purple-500 hover:text-white"
+                    >
+                      <ExternalLink size={18} />
+                    </button>
+
+                    <button
                       onClick={() => onDownload(report)}
+                      title="Download as text"
                       className="rounded-xl bg-emerald-500/10 p-2 text-emerald-400 transition hover:bg-emerald-500 hover:text-white"
                     >
                       <Download size={18} />

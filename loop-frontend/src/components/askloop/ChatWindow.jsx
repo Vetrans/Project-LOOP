@@ -79,13 +79,18 @@ export default function ChatWindow() {
     try {
       const response = await askLoop(question);
 
-const aiMessage = {
-  id: Date.now() + 1,
-  type: "ai",
-  text: response.answer,
-};
+      // AI3 acceptance criteria #3: answers must cite or list the
+      // specific feedback items they're based on. ai-service already
+      // returns `citations` and insight.routes.js passes them through
+      // untouched — this was previously being discarded here.
+      const aiMessage = {
+        id: Date.now() + 1,
+        type: "ai",
+        text: response.answer,
+        citations: response.citations || [],
+      };
 
-setMessages((prev) => [...prev, aiMessage]);
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (err) {
       console.log(err);
     } finally {
