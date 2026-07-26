@@ -91,7 +91,7 @@ export default function ReportDetail() {
           a real PDF export with zero extra dependencies). */}
       <div className="mx-auto max-w-4xl px-6 py-12 print:max-w-none print:px-0 print:py-0 print:text-black">
         <div className="mb-8 flex items-center gap-4">
-          <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 p-4 print:hidden">
+          <div className="rounded-2xl bg-linear-to-br from-cyan-500 to-emerald-500 p-4 print:hidden">
             <FileText className="text-white" size={28} />
           </div>
 

@@ -41,7 +41,7 @@ export default function ReportPreview({ report }) {
     >
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 p-4">
+          <div className="rounded-2xl bg-linear-to-br from-cyan-500 to-emerald-500 p-4">
             <FileText
               className="text-white"
               size={28}

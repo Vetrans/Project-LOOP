@@ -17,7 +17,7 @@ export default function ThemesHeader({
       className="mb-8 flex flex-col gap-5 rounded-3xl border border-white/10 bg-[#111827] p-6 shadow-xl lg:flex-row lg:items-center lg:justify-between"
     >
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-cyan-500 shadow-lg">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-purple-500 to-cyan-500 shadow-lg">
           <TrendingUp className="h-8 w-8 text-white" />
         </div>
 

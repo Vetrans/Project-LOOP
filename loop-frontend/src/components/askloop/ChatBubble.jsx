@@ -53,7 +53,7 @@ export default function ChatBubble({ message }) {
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
             isUser
               ? "bg-cyan-500"
-              : "bg-gradient-to-br from-emerald-500 to-cyan-500"
+              : "bg-linear-to-br from-emerald-500 to-cyan-500"
           }`}
         >
           {isUser ? (

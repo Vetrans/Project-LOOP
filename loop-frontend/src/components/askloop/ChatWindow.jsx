@@ -109,7 +109,7 @@ export default function ChatWindow() {
 
   <ChatHeader onClear={clearChat} />
 
-  <div className="min-h-[560px] max-h-[560px] overflow-y-auto bg-[#0B1212] px-8 py-8">
+  <div className="min-h-140 max-h-140 overflow-y-auto bg-[#0B1212] px-8 py-8">
 
     {messages.length === 0 ? (
 
@@ -117,7 +117,7 @@ export default function ChatWindow() {
 
         {/* AI Icon */}
 
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 shadow-lg">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-cyan-500 to-emerald-500 shadow-lg">
 
           <Sparkles className="h-10 w-10 text-white"/>
 
@@ -203,7 +203,7 @@ export default function ChatWindow() {
             value={input}
             onChange={handleInput}
             placeholder="Ask LOOP AI anything..."
-            className="max-h-40 min-h-[56px] flex-1 resize-none overflow-y-auto bg-transparent px-2 py-3 text-white placeholder:text-gray-500 focus:outline-none"
+            className="max-h-40 min-h-14 flex-1 resize-none overflow-y-auto bg-transparent px-2 py-3 text-white placeholder:text-gray-500 focus:outline-none"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
