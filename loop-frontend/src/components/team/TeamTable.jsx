@@ -15,6 +15,7 @@ export default function TeamTable({
   onView,
   onEdit,
   onDelete,
+  canManage = true,
 }) {
   const getStatusColor = (status) => {
     switch (status) {
@@ -70,7 +71,7 @@ export default function TeamTable({
 
                 <div className="relative">
 
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#32E6A4] to-[#0FAE7E] text-xl font-bold text-black">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-[#32E6A4] to-[#0FAE7E] text-xl font-bold text-black">
 
                     {initials}
 
@@ -182,7 +183,7 @@ export default function TeamTable({
               <div className="h-2 rounded-full bg-[#173331]">
 
                 <div
-                  className="h-2 rounded-full bg-gradient-to-r from-[#32E6A4] to-[#1BD8B1]"
+                  className="h-2 rounded-full bg-linear-to-r from-[#32E6A4] to-[#1BD8B1]"
                   style={{
                     width: `${member.performance}%`,
                   }}
@@ -217,27 +218,31 @@ export default function TeamTable({
                   />
                 </button>
 
-                <button
-                  onClick={() => onEdit(member)}
-                  className="rounded-xl bg-[#173331] p-3 transition hover:bg-yellow-500"
-                  title="Edit"
-                >
-                  <Pencil
-                    size={18}
-                    className="text-white"
-                  />
-                </button>
+                {canManage && (
+                  <>
+                    <button
+                      onClick={() => onEdit(member)}
+                      className="rounded-xl bg-[#173331] p-3 transition hover:bg-yellow-500"
+                      title="Edit"
+                    >
+                      <Pencil
+                        size={18}
+                        className="text-white"
+                      />
+                    </button>
 
-                <button
-                  onClick={() => onDelete(member)}
-                  className="rounded-xl bg-[#173331] p-3 transition hover:bg-red-600"
-                  title="Delete"
-                >
-                  <Trash2
-                    size={18}
-                    className="text-white"
-                  />
-                </button>
+                    <button
+                      onClick={() => onDelete(member)}
+                      className="rounded-xl bg-[#173331] p-3 transition hover:bg-red-600"
+                      title="Delete"
+                    >
+                      <Trash2
+                        size={18}
+                        className="text-white"
+                      />
+                    </button>
+                  </>
+                )}
 
               </div>
 

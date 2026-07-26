@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 export default function TeamHeader({
   onRefresh,
   onAddMember,
+  canManage = true,
 }) {
   return (
     <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -32,13 +33,15 @@ export default function TeamHeader({
           Refresh
         </button>
 
-        <button
-          onClick={onAddMember}
-          className="flex items-center gap-2 rounded-xl bg-[#32E6A4] px-5 py-3 font-semibold text-black transition duration-300 hover:scale-105"
-        >
-          <UserPlus size={18} />
-          Add Member
-        </button>
+        {canManage && (
+          <button
+            onClick={onAddMember}
+            className="flex items-center gap-2 rounded-xl bg-[#32E6A4] px-5 py-3 font-semibold text-black transition duration-300 hover:scale-105"
+          >
+            <UserPlus size={18} />
+            Add Member
+          </button>
+        )}
 
       </div>
 

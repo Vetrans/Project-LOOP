@@ -23,7 +23,16 @@ import {
   reportStatus,
 } from "../data/reportsData";
 
+import { useAuth } from "../context/AuthContext";
+
 export default function Reports() {
+  const { user } = useAuth();
+  // Mirrors the backend's requireRole("ADMIN", "ANALYST") on
+  // POST /reports/generate — viewing, previewing, and downloading
+  // reports has no role restriction on the backend, so only the
+  // Generate action is hidden for Viewers.
+  const canManage = user?.role === "ADMIN" || user?.role === "ANALYST";
+
   const [summary, setSummary] = useState([]);
   const [reports, setReports] = useState([]);
 
@@ -91,6 +100,7 @@ export default function Reports() {
   };
 
   const handleGenerate = async () => {
+    if (!canManage) return;
     setGenerating(true);
 
     try {
@@ -139,6 +149,7 @@ export default function Reports() {
           onExport={() => setShowExportModal(true)}
           onGenerate={handleGenerate}
           generating={generating}
+          canManage={canManage}
         />
 
         <ReportSummaryCards summary={summary} />

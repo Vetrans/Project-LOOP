@@ -26,7 +26,14 @@ import {
   statusList,
 } from "../data/teamData";
 
+import { useAuth } from "../context/AuthContext";
+
 export default function Team() {
+  const { user } = useAuth();
+  // Team roster editing mirrors the backend's requireRole("ADMIN", "ANALYST")
+  // on create/update/delete — Viewers see the same roster, read-only.
+  const canManage = user?.role === "ADMIN" || user?.role === "ANALYST";
+
   const [summary, setSummary] = useState([]);
   const [members, setMembers] = useState([]);
 
@@ -103,11 +110,13 @@ export default function Team() {
   };
 
   const handleAddMember = () => {
+    if (!canManage) return;
     setEditingMember(null);
     setShowModal(true);
   };
 
   const handleEditMember = (member) => {
+    if (!canManage) return;
     setEditingMember(member);
     setShowModal(true);
   };
@@ -196,6 +205,7 @@ export default function Team() {
         <TeamHeader
           onRefresh={handleRefresh}
           onAddMember={handleAddMember}
+          canManage={canManage}
         />
 
         <TeamSummaryCards summary={summary} />
@@ -222,15 +232,17 @@ export default function Team() {
             </h2>
 
             <p className="mt-3 text-gray-400">
-              Try changing the filters or add a new team member.
+              Try changing the filters{canManage ? " or add a new team member." : "."}
             </p>
 
-            <button
-              onClick={handleAddMember}
-              className="mt-8 rounded-xl bg-[#32E6A4] px-6 py-3 font-semibold text-black transition hover:scale-105"
-            >
-              Add Member
-            </button>
+            {canManage && (
+              <button
+                onClick={handleAddMember}
+                className="mt-8 rounded-xl bg-[#32E6A4] px-6 py-3 font-semibold text-black transition hover:scale-105"
+              >
+                Add Member
+              </button>
+            )}
           </div>
         ) : (
           <TeamTable
@@ -238,6 +250,7 @@ export default function Team() {
             onView={handleView}
             onEdit={handleEditMember}
             onDelete={setDeleteTarget}
+            canManage={canManage}
           />
         )}
 
@@ -250,22 +263,26 @@ export default function Team() {
           }}
         />
 
-        <MemberModal
-          open={showModal}
-          member={editingMember}
-          onClose={() => {
-            setShowModal(false);
-            setEditingMember(null);
-          }}
-          onSave={handleSaveMember}
-        />
+        {canManage && (
+          <>
+            <MemberModal
+              open={showModal}
+              member={editingMember}
+              onClose={() => {
+                setShowModal(false);
+                setEditingMember(null);
+              }}
+              onSave={handleSaveMember}
+            />
 
-        <DeleteConfirmModal
-          open={!!deleteTarget}
-          member={deleteTarget}
-          onClose={() => setDeleteTarget(null)}
-          onDelete={handleDelete}
-        />
+            <DeleteConfirmModal
+              open={!!deleteTarget}
+              member={deleteTarget}
+              onClose={() => setDeleteTarget(null)}
+              onDelete={handleDelete}
+            />
+          </>
+        )}
       </PageContainer>
     </DashboardLayout>
   );

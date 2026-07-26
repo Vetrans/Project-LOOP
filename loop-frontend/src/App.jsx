@@ -15,8 +15,14 @@ import AskLoop from "./pages/AskLoop";
 import Team from "./pages/Team";
 import Members from "./pages/Members";
 import Settings from "./pages/Settings";
+import Forbidden from "./pages/Forbidden";
+import NotFound from "./pages/NotFound";
 
-function ProtectedRoute({ children }) {
+// allowedRoles is optional — omit it for any route every logged-in role
+// can view (which is most of the app; RBAC there is enforced by hiding
+// individual actions, not the whole page). Pass it only for pages that
+// should be completely blocked for certain roles (e.g. /members).
+function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
 
   if (loading) return <div className="min-h-screen bg-[#0B1212]" />;
@@ -24,6 +30,9 @@ function ProtectedRoute({ children }) {
   // New users can't reach any dashboard route until onboarding is done —
   // this is enforced here so typing /dashboard directly can't bypass it.
   if (!user.onboardingCompleted) return <Navigate to="/onboarding" replace />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/forbidden" replace />;
+  }
 
   return children;
 }
@@ -63,8 +72,18 @@ function App() {
         <Route path="/reports/:id" element={<ProtectedRoute><ReportDetail /></ProtectedRoute>} />
         <Route path="/ask-loop" element={<ProtectedRoute><AskLoop /></ProtectedRoute>} />
         <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
-        <Route path="/members" element={<ProtectedRoute><Members /></ProtectedRoute>} />
+        <Route
+          path="/members"
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <Members />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+        <Route path="/forbidden" element={<Forbidden />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

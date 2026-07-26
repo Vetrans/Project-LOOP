@@ -4,6 +4,7 @@ export default function FeedbackTable({
   feedback = [],
   onStatusChange,
   loading = false,
+  canManage = true,
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0E1515]">
@@ -32,6 +33,7 @@ export default function FeedbackTable({
                 key={item.id}
                 item={item}
                 onStatusChange={onStatusChange}
+                canManage={canManage}
               />
             ))
           ) : (

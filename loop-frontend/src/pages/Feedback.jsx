@@ -17,6 +17,7 @@ import {
   simulateChannel,
 } from "../services/feedbackService";
 import { getThemes } from "../services/themeService";
+import { useAuth } from "../context/AuthContext";
 
 const sentimentLabel = { POS: "Positive", NEU: "Neutral", NEG: "Negative" };
 const statusLabel = { NEW: "Pending", REVIEWED: "In Review", ACTIONED: "Resolved" };
@@ -50,6 +51,12 @@ function present(item) {
 }
 
 export default function Feedback() {
+  const { user } = useAuth();
+  // Mirrors the backend's requireRole("ADMIN", "ANALYST") on every
+  // feedback-mutating route — Viewers get read-only access here too,
+  // not just a 403 if they somehow trigger the action.
+  const canManage = user?.role === "ADMIN" || user?.role === "ANALYST";
+
   const [items, setItems] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,9 +69,6 @@ export default function Feedback() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showSimulateModal, setShowSimulateModal] = useState(false);
 
-  // Themes only need to load once (and after a simulate/add, since new
-  // items may introduce new themes) — kept separate from the debounced
-  // feedback-list effect below.
   async function loadThemes() {
     try {
       const data = await getThemes();
@@ -101,8 +105,6 @@ export default function Feedback() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Debounced so typing in the search box (or flipping several filters
-  // in quick succession) doesn't fire a request per keystroke.
   useEffect(() => {
     const timer = setTimeout(loadFeedback, 350);
     return () => clearTimeout(timer);
@@ -111,7 +113,7 @@ export default function Feedback() {
 
   function updateFilter(key, value) {
     setFilters((prev) => ({ ...prev, [key]: value }));
-    setPage(1); // any filter change restarts pagination at page 1
+    setPage(1);
   }
 
   function clearFilters() {
@@ -138,8 +140,6 @@ export default function Feedback() {
     return result;
   }
 
-  // Optimistic: the dropdown updates instantly, then confirms with the
-  // server; on failure it reverts so the UI never lies about state.
   async function handleStatusChange(id, newStatus) {
     const previous = items;
     setItems((prev) =>
@@ -158,8 +158,6 @@ export default function Feedback() {
     }
   }
 
-  // What's currently on screen is already exactly what the filters
-  // describe (server-side), so export just ships the current page as-is.
   const exportRows = useMemo(
     () =>
       items.map((item) => ({
@@ -180,6 +178,7 @@ export default function Feedback() {
           onExport={() => exportFeedbackCSV(exportRows)}
           onUpload={() => setShowUploadModal(true)}
           onSimulate={() => setShowSimulateModal(true)}
+          canManage={canManage}
         />
 
         <FeedbackFilters
@@ -194,6 +193,7 @@ export default function Feedback() {
             feedback={items}
             onStatusChange={handleStatusChange}
             loading={loading}
+            canManage={canManage}
           />
 
           <Pagination
@@ -205,26 +205,30 @@ export default function Feedback() {
           />
         </div>
 
-        <AddFeedbackModal
-          open={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onSave={handleCreate}
-        />
+        {canManage && (
+          <>
+            <AddFeedbackModal
+              open={showAddModal}
+              onClose={() => setShowAddModal(false)}
+              onSave={handleCreate}
+            />
 
-        <UploadCSV
-          open={showUploadModal}
-          onClose={() => setShowUploadModal(false)}
-          onSuccess={() => {
-            loadFeedback();
-            loadThemes();
-          }}
-        />
+            <UploadCSV
+              open={showUploadModal}
+              onClose={() => setShowUploadModal(false)}
+              onSuccess={() => {
+                loadFeedback();
+                loadThemes();
+              }}
+            />
 
-        <SimulateChannelModal
-          open={showSimulateModal}
-          onClose={() => setShowSimulateModal(false)}
-          onSimulate={handleSimulate}
-        />
+            <SimulateChannelModal
+              open={showSimulateModal}
+              onClose={() => setShowSimulateModal(false)}
+              onSimulate={handleSimulate}
+            />
+          </>
+        )}
       </PageContainer>
     </DashboardLayout>
   );
