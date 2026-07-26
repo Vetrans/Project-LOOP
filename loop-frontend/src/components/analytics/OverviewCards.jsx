@@ -56,7 +56,7 @@ export default function OverviewCards({ stats, comparisonLabel = "vs previous pe
               </div>
 
               <div
-                className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${colorMap[item.title]}`}
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br ${colorMap[item.title]}`}
               >
                 <Icon className="h-7 w-7 text-white" />
               </div>

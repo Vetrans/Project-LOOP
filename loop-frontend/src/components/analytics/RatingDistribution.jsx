@@ -53,7 +53,7 @@ export default function RatingDistribution({ data, rangeLabel }) {
                   duration: 0.8,
                   delay: index * 0.1,
                 }}
-                className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-orange-500"
+                className="h-full rounded-full bg-linear-to-r from-yellow-400 to-orange-500"
               />
             </div>
           </div>
