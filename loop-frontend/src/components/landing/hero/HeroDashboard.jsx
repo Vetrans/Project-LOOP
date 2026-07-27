@@ -7,7 +7,7 @@ export default function HeroDashboard() {
     <div
       className="
       w-full
-      max-w-[560px]
+      max-w-140
       rounded-[36px]
       border
       border-white/10

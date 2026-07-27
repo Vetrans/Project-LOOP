@@ -83,9 +83,12 @@ const generateSchema = z.object({
   days: z.number().int().min(1).max(90).optional().default(7),
 });
 
-/* POST /api/reports/generate — pre-compute real stats, then ask Claude
- * to write only the narrative around them (unchanged logic), now
- * returning the shape the frontend actually expects. */
+/* POST /api/reports/generate — pre-compute real stats in code, then
+ * ask Claude (via ai-service's /report-narrative) to write only the
+ * narrative around those numbers. This is the actual AI4 pipeline —
+ * writeReportNarrativeWithAI calls out to ai-service and falls back to
+ * a template narrative only if ai-service is unreachable or has no
+ * ANTHROPIC_API_KEY configured, so report generation never hard-fails. */
 router.post(
   "/generate",
   requireRole("ADMIN", "ANALYST"),
@@ -141,7 +144,7 @@ router.post(
       }));
 
     const stats = { totalItems, pctNegative, sentimentDelta, topThemes, sampleQuotes };
-    const { narrative, recommendedActions } = writeReportNarrative(stats);
+    const { narrative, recommendedActions } = await writeReportNarrativeWithAI(stats);
 
     let report = await Report.create({
       workspaceId: req.user.workspaceId,
