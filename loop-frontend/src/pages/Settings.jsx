@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import DashboardLayout from "../components/layout/DashboardLayout";
@@ -11,6 +12,7 @@ import NotificationSettings from "../components/settings/NotificationSettings";
 import AIPreferences from "../components/settings/AIPreferences";
 import AppearanceSettings from "../components/settings/AppearanceSettings";
 import OrganizationSettings from "../components/settings/OrganizationSettings";
+import LogoutCard from "../components/settings/LogoutCard";
 import SaveSettings from "../components/settings/SaveSettings";
 
 import { useAuth } from "../context/AuthContext";
@@ -23,7 +25,8 @@ import {
 } from "../services/settingsService";
 
 export default function Settings() {
-  const { updateUser } = useAuth();
+  const { updateUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
 
@@ -147,6 +150,15 @@ export default function Settings() {
     await changePassword(payload);
   };
 
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Log out of LOOP AI?");
+    if (!confirmLogout) return;
+
+    logout();
+    toast.success("Logged out successfully.");
+    navigate("/login", { replace: true });
+  };
+
   return (
     <DashboardLayout>
       <PageContainer>
@@ -187,6 +199,8 @@ export default function Settings() {
             organization={organization}
             setOrganization={setOrganization}
           />
+
+          <LogoutCard onLogout={handleLogout} />
 
           <SaveSettings
             loading={loading}
