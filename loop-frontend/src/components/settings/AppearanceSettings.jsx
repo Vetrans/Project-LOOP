@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import {
   Palette,
   Moon,
@@ -25,10 +26,14 @@ export default function AppearanceSettings({
     });
   };
 
+  // Only Dark is actually implemented — every component in this app is
+  // built with hardcoded dark colors, there's no light-theme styling to
+  // switch to yet. Letting the other options silently "select" with no
+  // visible effect is worse than being upfront that they're not ready.
   const themes = [
-    { id: "Dark", icon: <Moon size={20} />, title: "Dark" },
-    { id: "Light", icon: <Sun size={20} />, title: "Light" },
-    { id: "System", icon: <Monitor size={20} />, title: "System" },
+    { id: "Dark", icon: <Moon size={20} />, title: "Dark", available: true },
+    { id: "Light", icon: <Sun size={20} />, title: "Light", available: false },
+    { id: "System", icon: <Monitor size={20} />, title: "System", available: false },
   ];
 
   const colors = [
@@ -39,6 +44,14 @@ export default function AppearanceSettings({
     "#EF4444",
     "#FACC15",
   ];
+
+  const handleThemeClick = (theme) => {
+    if (!theme.available) {
+      toast.info(`${theme.title} theme is coming soon — LOOP AI is Dark-only for now.`);
+      return;
+    }
+    updateField("theme", theme.id);
+  };
 
   return (
     <motion.div
@@ -72,13 +85,21 @@ export default function AppearanceSettings({
           {themes.map((theme) => (
             <button
               key={theme.id}
-              onClick={() => updateField("theme", theme.id)}
-              className={`rounded-2xl border p-5 transition ${
-                appearance.theme === theme.id
+              onClick={() => handleThemeClick(theme)}
+              className={`relative rounded-2xl border p-5 text-left transition ${
+                !theme.available
+                  ? "cursor-not-allowed border-[#173331] bg-[#0E1615] opacity-50"
+                  : appearance.theme === theme.id
                   ? "border-[#32E6A4] bg-[#32E6A4]/10"
-                  : "border-[#173331] bg-[#0E1615]"
+                  : "border-[#173331] bg-[#0E1615] hover:border-[#32E6A4]/40"
               }`}
             >
+              {!theme.available && (
+                <span className="absolute right-3 top-3 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-gray-400">
+                  Coming Soon
+                </span>
+              )}
+
               <div className="mb-3 text-[#32E6A4]">
                 {theme.icon}
               </div>

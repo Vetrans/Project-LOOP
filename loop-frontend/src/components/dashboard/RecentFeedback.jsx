@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CheckCircle2,
   Clock3,
@@ -9,6 +10,7 @@ import { getRecentFeedback } from "../../services/dashboardService";
 
 export default function RecentFeedback() {
   const [feedback, setFeedback] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadFeedback = async () => {
@@ -32,7 +34,10 @@ export default function RecentFeedback() {
           </p>
         </div>
 
-        <button className="rounded-lg border border-cyan-500 px-4 py-2 text-sm text-cyan-400 transition hover:bg-cyan-500 hover:text-black">
+        <button
+          onClick={() => navigate("/feedback")}
+          className="rounded-lg border border-cyan-500 px-4 py-2 text-sm text-cyan-400 transition hover:bg-cyan-500 hover:text-black"
+        >
           View All
         </button>
       </div>

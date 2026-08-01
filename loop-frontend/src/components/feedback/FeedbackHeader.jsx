@@ -1,8 +1,9 @@
-import { Plus, Download, Upload, Zap } from "lucide-react";
+import { Plus, Download, Upload, Zap, Loader2 } from "lucide-react";
 
 export default function FeedbackHeader({
   onAdd,
   onExport,
+  exporting = false,
   onUpload,
   onSimulate,
   canManage = true,
@@ -58,6 +59,7 @@ export default function FeedbackHeader({
 
       <button
         onClick={onExport}
+        disabled={exporting}
         className="
           flex
           items-center
@@ -71,10 +73,12 @@ export default function FeedbackHeader({
           text-cyan-400
           transition
           hover:bg-cyan-500/10
+          disabled:cursor-not-allowed
+          disabled:opacity-60
         "
       >
-        <Download size={18} />
-        Export CSV
+        {exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+        {exporting ? "Exporting..." : "Export CSV"}
       </button>
 
       {canManage && (

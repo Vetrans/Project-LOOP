@@ -8,6 +8,7 @@ import {
   Building2,
   Briefcase,
   User,
+  Trash2,
 } from "lucide-react";
 
 // Fully controlled by props.
@@ -24,6 +25,18 @@ export default function ProfileSettings({ profile, setProfile }) {
 
   const openFilePicker = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleRemovePhoto = () => {
+    setProfile((prev) => ({
+      ...prev,
+      avatarUrl: "",
+    }));
+
+    // Reset the file input so re-selecting the same file later still fires onChange.
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    toast.success("Profile photo removed.");
   };
 
   const handleImageUpload = (e) => {
@@ -156,13 +169,26 @@ export default function ProfileSettings({ profile, setProfile }) {
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={openFilePicker}
-          className="mt-4 rounded-xl border border-[#32E6A4]/30 px-5 py-2 text-sm font-medium text-[#32E6A4] transition hover:bg-[#173331]"
-        >
-          Upload Photo
-        </button>
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={openFilePicker}
+            className="rounded-xl border border-[#32E6A4]/30 px-5 py-2 text-sm font-medium text-[#32E6A4] transition hover:bg-[#173331]"
+          >
+            Upload Photo
+          </button>
+
+          {profile.avatarUrl && (
+            <button
+              type="button"
+              onClick={handleRemovePhoto}
+              className="flex items-center gap-1.5 rounded-xl border border-red-500/30 px-5 py-2 text-sm font-medium text-red-400 transition hover:bg-red-500/10"
+            >
+              <Trash2 size={14} />
+              Remove Photo
+            </button>
+          )}
+        </div>
 
         <input
           ref={fileInputRef}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import PageContainer from "../components/layout/PageContainer";
@@ -23,6 +23,7 @@ const sentimentLabel = { POS: "Positive", NEU: "Neutral", NEG: "Negative" };
 const statusLabel = { NEW: "Pending", REVIEWED: "In Review", ACTIONED: "Resolved" };
 
 const LIMIT = 10;
+const EXPORT_PAGE_SIZE = 100; // matches the backend's max allowed limit
 
 const emptyFilters = {
   search: "",
@@ -50,16 +51,28 @@ function present(item) {
   };
 }
 
+// Builds the query params object shared by both the inbox fetch and the
+// "export everything matching the filters" fetch below.
+function buildFilterParams(filters) {
+  const params = {};
+  if (filters.search) params.search = filters.search;
+  if (filters.channel) params.channel = filters.channel;
+  if (filters.sentiment) params.sentiment = filters.sentiment;
+  if (filters.status) params.status = filters.status;
+  if (filters.theme) params.theme = filters.theme;
+  if (filters.startDate) params.startDate = filters.startDate;
+  if (filters.endDate) params.endDate = filters.endDate;
+  return params;
+}
+
 export default function Feedback() {
   const { user } = useAuth();
-  // Mirrors the backend's requireRole("ADMIN", "ANALYST") on every
-  // feedback-mutating route — Viewers get read-only access here too,
-  // not just a 403 if they somehow trigger the action.
   const canManage = user?.role === "ADMIN" || user?.role === "ANALYST";
 
   const [items, setItems] = useState([]);
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const [filters, setFilters] = useState(emptyFilters);
   const [page, setPage] = useState(1);
@@ -81,15 +94,7 @@ export default function Feedback() {
   async function loadFeedback() {
     setLoading(true);
     try {
-      const params = { page, limit: LIMIT };
-      if (filters.search) params.search = filters.search;
-      if (filters.channel) params.channel = filters.channel;
-      if (filters.sentiment) params.sentiment = filters.sentiment;
-      if (filters.status) params.status = filters.status;
-      if (filters.theme) params.theme = filters.theme;
-      if (filters.startDate) params.startDate = filters.startDate;
-      if (filters.endDate) params.endDate = filters.endDate;
-
+      const params = { ...buildFilterParams(filters), page, limit: LIMIT };
       const data = await getFeedback(params);
       setItems(data.items.map(present));
       setMeta({ total: data.total, pages: data.pages });
@@ -158,24 +163,62 @@ export default function Feedback() {
     }
   }
 
-  const exportRows = useMemo(
-    () =>
-      items.map((item) => ({
-        customer: item.customer,
-        feedback: item.feedback,
-        category: item.category,
-        sentiment: item.sentimentDisplay,
-        status: item.statusDisplay,
-      })),
-    [items],
-  );
+  // Fetches EVERY item matching the active filters (not just the
+  // current page) by walking through backend pages at the max page
+  // size, then exports the full set. Previously this exported only
+  // `items` — the current page's ~10 rows — regardless of how many
+  // items actually matched the filters.
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const filterParams = buildFilterParams(filters);
+      let allItems = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        const data = await getFeedback({
+          ...filterParams,
+          page: currentPage,
+          limit: EXPORT_PAGE_SIZE,
+        });
+        allItems = allItems.concat(data.items.map(present));
+        totalPages = data.pages;
+        currentPage += 1;
+      } while (currentPage <= totalPages);
+
+      if (allItems.length === 0) {
+        toast.error("No feedback matches the current filters to export.");
+        return;
+      }
+
+      exportFeedbackCSV(
+        allItems.map((item) => ({
+          customer: item.customer,
+          feedback: item.feedback,
+          category: item.category,
+          sentiment: item.sentimentDisplay,
+          status: item.statusDisplay,
+        })),
+      );
+
+      toast.success(
+        `Exported ${allItems.length} feedback item${allItems.length === 1 ? "" : "s"}.`,
+      );
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Could not export feedback.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <DashboardLayout>
       <PageContainer title="Feedback Management" subtitle="Manage and analyze customer feedback.">
         <FeedbackHeader
           onAdd={() => setShowAddModal(true)}
-          onExport={() => exportFeedbackCSV(exportRows)}
+          onExport={handleExport}
+          exporting={exporting}
           onUpload={() => setShowUploadModal(true)}
           onSimulate={() => setShowSimulateModal(true)}
           canManage={canManage}

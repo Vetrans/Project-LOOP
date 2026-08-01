@@ -202,7 +202,16 @@ router.post(
     if (!user) throw new AppError("User not found.", 404);
 
     const valid = await user.checkPassword(currentPassword);
-    if (!valid) throw new AppError("Current password is incorrect.", 401);
+    // 400, not 401: this is a validation failure ("you typed the wrong
+    // current password"), not an authentication failure. The caller IS
+    // authenticated — they have a valid session token, they just got a
+    // form field wrong. Using 401 here used to trip the frontend's
+    // global axios interceptor, which treats ANY 401 as "session
+    // expired" and wipes the user's real login token — so one wrong
+    // password attempt would silently log the user out and break every
+    // subsequent action on the page with a confusing "Not authenticated"
+    // error, even for completely unrelated buttons like Reset/Refresh.
+    if (!valid) throw new AppError("Current password is incorrect.", 400);
 
     await user.setPassword(newPassword);
     await user.save();

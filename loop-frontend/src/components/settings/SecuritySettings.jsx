@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -28,6 +28,22 @@ export default function SecuritySettings({
   const [strength, setStrength] = useState("");
   const [changing, setChanging] = useState(false);
 
+  // Whenever the parent reloads settings (page mount, Refresh, Reset,
+  // or right after a successful "Save Changes") this local password
+  // form clears itself too — previously only a *successful* password
+  // change reset these fields, so the form could visibly linger on a
+  // stale "Weak" reading after using any of the other buttons on the
+  // page even though nothing in the password fields had changed.
+  useEffect(() => {
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setStrength("");
+    setShowCurrent(false);
+    setShowNew(false);
+    setShowConfirm(false);
+  }, [security]);
+
   const handleToggle = (field) => {
     setSecurity({
       ...security,
@@ -36,6 +52,13 @@ export default function SecuritySettings({
   };
 
   const calculateStrength = (password) => {
+    // An empty field has no strength to report — it should read as
+    // "not set," not "Weak". Previously an empty string scored 0/5 and
+    // fell into the "score <= 2" bucket, which returned "Weak", so
+    // clearing the New Password field never actually cleared the
+    // indicator.
+    if (!password) return "";
+
     let score = 0;
 
     if (password.length >= 8) score++;
