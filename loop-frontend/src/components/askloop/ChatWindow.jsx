@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send, Paperclip, Mic, Sparkles } from "lucide-react";
 
 import ChatHeader from "./ChatHeader";
@@ -7,195 +7,91 @@ import TypingIndicator from "./TypingIndicator";
 import SuggestedQuestions from "./SuggestedQuestions";
 
 import askLoopPrompts from "../../data/askLoopPrompts";
-import {
-  askLoop,
-  clearChatHistory,
-} from "../../services/askLoopService";
 
-export default function ChatWindow() {
-  const [messages, setMessages] = useState([]);
+export default function ChatWindow({
+  title,
+  messages,
+  isLoading,
+  onSend,
+  onNewChat,
+}) {
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
   const textareaRef = useRef(null);
   const chatEndRef = useRef(null);
 
+  // Refocus the textarea whenever the active conversation changes (title
+  // changes whenever the user switches chats via the sidebar).
   useEffect(() => {
     textareaRef.current?.focus();
-  }, []);
+  }, [title]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("loop_chat");
-
-    if (saved) {
-      setMessages(JSON.parse(saved));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "loop_chat",
-      JSON.stringify(messages)
-    );
-
-    chatEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   const handleInput = (e) => {
     setInput(e.target.value);
-
     e.target.style.height = "auto";
-    e.target.style.height =
-      e.target.scrollHeight + "px";
+    e.target.style.height = e.target.scrollHeight + "px";
   };
 
-  const handleSend = async (
-    question = input
-  ) => {
+  const submit = (question = input) => {
     if (!question.trim()) return;
-
-    const userMessage = {
-      id: Date.now(),
-      type: "user",
-      text: question,
-    };
-
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-    ]);
-
+    onSend(question);
     setInput("");
-
-    if (textareaRef.current) {
-      textareaRef.current.style.height =
-        "56px";
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await askLoop(question);
-
-      // AI3 acceptance criteria #3: answers must cite or list the
-      // specific feedback items they're based on. ai-service already
-      // returns `citations` and insight.routes.js passes them through
-      // untouched — this was previously being discarded here.
-      const aiMessage = {
-        id: Date.now() + 1,
-        type: "ai",
-        text: response.answer,
-        citations: response.citations || [],
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setIsLoading(false);
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "56px";
   };
 
-  const clearChat = async () => {
-  setMessages([]);
-  localStorage.removeItem("loop-chat");
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0E1515] shadow-2xl">
+      <ChatHeader title={title} onNewChat={onNewChat} />
 
-  await clearChatHistory();
-};
+      <div className="min-h-140 max-h-140 flex-1 overflow-y-auto bg-[#0B1212] px-8 py-8">
+        {messages.length === 0 ? (
+          <div className="flex min-h-full flex-col items-center justify-center">
+            {/* AI Icon */}
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-cyan-500 to-emerald-500 shadow-lg">
+              <Sparkles className="h-10 w-10 text-white" />
+            </div>
 
-  return (<div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0E1515] shadow-2xl">
+            <h2 className="text-center text-4xl font-bold text-white">
+              How can I help today?
+            </h2>
 
-  <ChatHeader onClear={clearChat} />
+            <p className="mt-4 max-w-3xl text-center text-lg leading-8 text-gray-400">
+              Ask LOOP AI to analyze customer feedback, summarize reviews,
+              detect sentiment, identify customer issues and generate
+              business insights instantly.
+            </p>
 
-  <div className="min-h-140 max-h-140 overflow-y-auto bg-[#0B1212] px-8 py-8">
+            <div className="mt-10 w-full max-w-5xl">
+              <SuggestedQuestions prompts={askLoopPrompts} onSelect={submit} />
+            </div>
+          </div>
+        ) : (
+          <div className="flex min-h-full flex-col justify-end">
+            <div className="space-y-8">
+              {messages.map((message) => (
+                <ChatBubble key={message.id} message={message} />
+              ))}
 
-    {messages.length === 0 ? (
+              {isLoading && <TypingIndicator />}
 
-      <div className="flex min-h-full flex-col items-center justify-center">
-
-        {/* AI Icon */}
-
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-cyan-500 to-emerald-500 shadow-lg">
-
-          <Sparkles className="h-10 w-10 text-white"/>
-
-        </div>
-
-        <h2 className="text-center text-4xl font-bold text-white">
-
-          How can I help today?
-
-        </h2>
-
-        <p className="mt-4 max-w-3xl text-center text-lg leading-8 text-gray-400">
-
-          Ask LOOP AI to analyze customer feedback, summarize reviews,
-          detect sentiment, identify customer issues and generate
-          business insights instantly.
-
-        </p>
-
-        <div className="mt-10 w-full max-w-5xl">
-
-          <SuggestedQuestions
-
-            prompts={askLoopPrompts}
-
-            onSelect={handleSend}
-
-          />
-
-        </div>
-
+              <div ref={chatEndRef} />
+            </div>
+          </div>
+        )}
       </div>
 
-    ) : (
-
-      <div className="flex min-h-full flex-col justify-end">
-
-        <div className="space-y-8">
-
-          {messages.map((message)=>(
-
-            <ChatBubble
-
-              key={message.id}
-
-              message={message}
-
-            />
-
-          ))}
-
-          {isLoading && <TypingIndicator />}
-
-          <div ref={chatEndRef}/>
-
-        </div>
-
-      </div>
-
-    )}
-
-  </div>
-        {/* Input Area */}
-
+      {/* Input Area */}
       <div className="border-t border-white/10 bg-[#0E1515] p-6">
-
         <div className="flex items-end gap-3 rounded-2xl border border-white/10 bg-[#131C1C] p-3">
-
-          {/* Attachment */}
-
           <button
             className="rounded-xl p-2 text-gray-400 transition hover:bg-white/10 hover:text-white"
             title="Attach File"
           >
             <Paperclip size={20} />
           </button>
-
-          {/* Textarea */}
 
           <textarea
             ref={textareaRef}
@@ -207,12 +103,10 @@ export default function ChatWindow() {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                submit();
               }
             }}
           />
-
-          {/* Voice */}
 
           <button
             className="rounded-xl p-2 text-gray-400 transition hover:bg-white/10 hover:text-white"
@@ -221,20 +115,16 @@ export default function ChatWindow() {
             <Mic size={20} />
           </button>
 
-          {/* Send */}
-
           <button
-            onClick={() => handleSend()}
+            onClick={() => submit()}
             disabled={!input.trim() || isLoading}
             className="rounded-xl bg-cyan-500 p-3 text-white transition hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Send size={18} />
           </button>
-
         </div>
 
         <div className="mt-4 flex items-center justify-between">
-
           <p className="text-xs text-gray-500">
             LOOP AI may occasionally make mistakes. Verify important information.
           </p>
@@ -242,10 +132,8 @@ export default function ChatWindow() {
           <span className="text-xs text-gray-600">
             Enter ↵ to send • Shift + Enter for new line
           </span>
-
         </div>
-
       </div>
-          </div>
+    </div>
   );
 }
