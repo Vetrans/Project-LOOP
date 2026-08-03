@@ -1,11 +1,19 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 export async function sendWelcomeEmail(name, email) {
   try {
-    const { data, error } = await resend.emails.send({
-      from: "LOOP AI <onboarding@resend.dev>",
+    await transporter.sendMail({
+      from: `"LOOP AI" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "🎉 Welcome to LOOP AI",
 
@@ -26,7 +34,7 @@ export async function sendWelcomeEmail(name, email) {
 
           <br>
 
-          <p>Thank you for choosing LOOP AI.</p>
+          <p>We're excited to have you with us.</p>
 
           <br>
 
@@ -35,16 +43,14 @@ export async function sendWelcomeEmail(name, email) {
       `,
     });
 
-    if (error) {
-      console.error(error);
-      return false;
-    }
+    console.log("✅ Welcome email sent");
 
-    console.log("Welcome email sent:", data.id);
     return true;
 
   } catch (err) {
-    console.error(err);
+
+    console.error("Email Error:", err);
+
     return false;
   }
 }

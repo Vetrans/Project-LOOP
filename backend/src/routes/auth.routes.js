@@ -58,11 +58,11 @@ router.post(
     await user.setPassword(password);
     await user.save();
 
-// Send welcome email (don't block signup if email fails)
-sendWelcomeEmail(user.name, user.email)
-  .catch(err => console.error("Welcome email failed:", err));
+    // Send welcome email (don't block signup if email fails)
+    sendWelcomeEmail(user.name, user.email)
+    .catch(err => console.error("Welcome email failed:", err));
 
-const token = signToken(user);
+    const token = signToken(user);
     res.status(201).json({
       token,
       user: {
