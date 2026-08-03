@@ -105,7 +105,6 @@ export default function Footer() {
           </p>
 
           <p>
-            Built with ❤️ using React, Tailwind CSS & AI
           </p>
 
         </div>
