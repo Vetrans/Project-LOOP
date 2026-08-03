@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Workspace from "../models/Workspace.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler, AppError } from "../utils/AppError.js";
+import { sendWelcomeEmail } from "../services/email.service.js";
 
 const router = Router();
 
@@ -57,7 +58,11 @@ router.post(
     await user.setPassword(password);
     await user.save();
 
-    const token = signToken(user);
+// Send welcome email (don't block signup if email fails)
+sendWelcomeEmail(user.name, user.email)
+  .catch(err => console.error("Welcome email failed:", err));
+
+const token = signToken(user);
     res.status(201).json({
       token,
       user: {
