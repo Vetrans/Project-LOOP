@@ -1,13 +1,13 @@
 """
 LOOP ai-service — the ONLY component in the whole app that calls the
-Anthropic API. Everything else (auth, RBAC, feedback CRUD, CSV import)
+Gemini API. Everything else (auth, RBAC, feedback CRUD, CSV import)
 lives in the Node/Express backend, which forwards requests here.
 
 Endpoints:
   POST /classify          — AI1: sentiment + themes + feature area for one item
   POST /report-narrative  — AI4: narrative + recommended actions around pre-computed stats
   POST /ask                — AI3: retrieval-grounded Q&A over a workspace's feedback
-  GET  /health             — liveness + whether an Anthropic key is configured
+  GET  /health             — liveness + whether an Gemini Key is configured
 
 Run with: uvicorn main:app --reload --port 8000
 """
@@ -25,12 +25,12 @@ from fastapi import FastAPI, HTTPException  # type: ignore
 from starlette.middleware.cors import CORSMiddleware  # type: ignore
 from pydantic import BaseModel, field_validator  # type: ignore[import]
 from pymongo import MongoClient  # type: ignore[import]
+import google.generativeai as genai
 
 load_dotenv()
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017/loop")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 
 app = FastAPI(title="LOOP ai-service")
 
@@ -46,30 +46,42 @@ app.add_middleware(
 mongo = MongoClient(MONGODB_URI)
 db = mongo.get_default_database()
 
-anthropic_client = None
-if ANTHROPIC_API_KEY:
-    from anthropic import Anthropic  # type: ignore
+model = None
 
-    anthropic_client = Anthropic(api_key=ANTHROPIC_API_KEY)
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel("gemini-flash-latest")
 
+def call_gemini_json(prompt: str) -> Optional[dict]:
+    """
+    Sends a prompt to Gemini and expects JSON.
+    """
 
-def call_claude_json(prompt: str, max_tokens: int = 600) -> Optional[dict]:
-    """Calls Claude, strips stray markdown fences, and parses JSON.
-    Returns None (never raises) if the model is unavailable or the
-    response can't be parsed — callers are responsible for falling
-    back gracefully."""
-    if anthropic_client is None:
+    if model is None:
         return None
 
     try:
-        response = anthropic_client.messages.create(
-            model=ANTHROPIC_MODEL,
-            max_tokens=max_tokens,
-            messages=[{"role": "user", "content": prompt}],
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "response_mime_type": "application/json",
+                "temperature": 0.2,
+            },
         )
-        text = "".join(b.text for b in response.content if b.type == "text").strip()
-        cleaned = _re.sub(r"^```(json)?|```$", "", text, flags=_re.MULTILINE).strip()
+
+        
+
+        text = response.text.strip()
+
+        cleaned = _re.sub(
+            r"^```json|^```|```$",
+            "",
+            text,
+            flags=_re.MULTILINE,
+        ).strip()
+
         return json.loads(cleaned)
+
     except Exception:
         return None
 
@@ -172,7 +184,11 @@ class AskResponse(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"ok": True, "service": "loop-ai-service", "anthropic_configured": bool(anthropic_client)}
+    return {
+    "ok": True,
+    "service": "loop-ai-service",
+    "gemini_configured": bool(model)
+}
 
 
 # --------------------------------------------------------------------- #
@@ -180,7 +196,7 @@ def health():
 # --------------------------------------------------------------------- #
 
 def _heuristic_classify(content: str, existing_themes: List[str]) -> dict:
-    """Local, dependency-free fallback used only when Claude is
+    """Local, dependency-free fallback used only when Gemini is
     unavailable or returns something that fails validation. Keeps the
     endpoint returning a valid, schema-conformant response either way,
     so callers never have to special-case a missing AI key."""
@@ -217,7 +233,7 @@ def _heuristic_classify(content: str, existing_themes: List[str]) -> dict:
         "sentimentScore": round(score, 2),
         "themes": [theme],
         "featureArea": theme,
-        "rationale": "Rule-based fallback classification (Claude unavailable or returned an invalid response).",
+        "rationale": "Rule-based fallback classification (Gemini unavailable or returned an invalid response).",
     }
 
 
@@ -237,26 +253,26 @@ def classify(req: ClassifyRequest):
         f"Feedback:\n\"\"\"\n{req.content}\n\"\"\""
     )
 
-    parsed = call_claude_json(prompt, max_tokens=400)
+    parsed = call_gemini_json(prompt)
 
     if parsed is not None:
         try:
             return ClassifyResponse(**parsed)
         except Exception:
-            # Claude responded but not in the exact required shape —
+            # # Gemini responded but not in the exact required shape —
             # retry once with a stricter reminder before giving up.
             retry_prompt = prompt + (
                 "\n\nYour previous response was not valid JSON in the exact required shape. "
                 "Return ONLY the raw JSON object this time, nothing else."
             )
-            parsed_retry = call_claude_json(retry_prompt, max_tokens=400)
+            parsed_retry = call_gemini_json(retry_prompt)
             if parsed_retry is not None:
                 try:
                     return ClassifyResponse(**parsed_retry)
                 except Exception:
                     pass
 
-    # Claude unavailable (no API key) or failed validation twice —
+    # Gemini unavailable (no API key) or failed validation twice —
     # fall back to the heuristic so the caller still gets a valid,
     # demoable classification instead of a 500.
     return ClassifyResponse(**_heuristic_classify(req.content, req.existing_themes))
@@ -279,7 +295,7 @@ def report_narrative(req: ReportNarrativeRequest):
         f"Stats:\n{json.dumps(stats, default=str)}"
     )
 
-    parsed = call_claude_json(prompt, max_tokens=600)
+    parsed = call_gemini_json(prompt)
 
     if parsed is not None:
         try:
@@ -303,12 +319,12 @@ def report_narrative(req: ReportNarrativeRequest):
             f"{'' if total_items == 1 else 's'}, {pct_negative}% negative — sentiment has "
             f"{trend_word} versus the prior period. The leading theme was \"{top['name']}\" "
             f"with {top['count']} mention{'' if top['count'] == 1 else 's'}, ahead of {others}. "
-            f"(Fallback narrative — ANTHROPIC_API_KEY not configured or unavailable.)"
+            f"(Fallback narrative — Gemini unavailable not configured or unavailable.)"
         )
     else:
         narrative = (
             "No feedback was logged in this period. "
-            "(Fallback narrative — ANTHROPIC_API_KEY not configured or unavailable.)"
+            "(Fallback narrative — Gemini unavailable.)"
         )
 
     recommended_actions = [
@@ -378,32 +394,42 @@ def answer_from_evidence(question: str, citations: List[Citation]) -> str:
             "Try rephrasing, or check back once more feedback has been ingested."
         )
 
-    if anthropic_client is None:
+    if model is None:
         names = sorted({t for c in citations for t in c.themes if t})
         theme_part = ", ".join(names) if names else "the topic you asked about"
         return (
             f"Based on {len(citations)} matching feedback item(s), the recurring pattern relates to "
-            f"{theme_part}. (Local fallback answer — set ANTHROPIC_API_KEY in ai-service/.env for a "
-            f"Claude-written answer.)"
+            f"{theme_part}. (Local fallback answer — Gemini response unavailable.)"
         )
 
-    context = "\n".join(f"[{i + 1}] ({c.channel}) {c.content}" for i, c in enumerate(citations))
+    context = "\n".join(
+        f"[{i + 1}] ({c.channel}) {c.content}"
+        for i, c in enumerate(citations)
+    )
+
     prompt = (
-        "Answer the question using ONLY the feedback items listed below. Never invent a claim, "
-        "quote, or number that isn't in them. If the items don't actually answer the question, say "
-        "so plainly. Cite items by their [number].\n\n"
+        "Answer the question using ONLY the feedback items listed below. "
+        "Never invent a claim, quote, or number that isn't in them. "
+        "If the items don't actually answer the question, say so plainly. "
+        "Cite items by their [number].\n\n"
         f"Feedback items:\n{context}\n\n"
         f"Question: {question}\n\n"
         "Give a concise, evidence-grounded answer (3-5 sentences)."
     )
 
     try:
-        response = anthropic_client.messages.create(
-            model=ANTHROPIC_MODEL,
-            max_tokens=500,
-            messages=[{"role": "user", "content": prompt}],
+        response = model.generate_content(
+            prompt,
+            generation_config={
+                "temperature": 0.3,
+            },
         )
-        text_blocks = [b.text for b in response.content if b.type == "text"]
-        return "".join(text_blocks).strip() or "The AI service returned an empty answer."
-    except Exception as exc:  # noqa: BLE001 — surface any SDK/network error as a clean message
-        return f"The AI service is temporarily unavailable ({exc.__class__.__name__}). Please try again shortly."
+
+        return response.text.strip()
+
+    except Exception as exc:
+        print(f"Gemini Error: {exc}")
+        return (
+           "The AI service is temporarily unavailable. "
+           "Please try again in a few moments."
+       )
