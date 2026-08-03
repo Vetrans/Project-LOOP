@@ -1,7 +1,11 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function CTA() {
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden bg-[#050B0B] py-28">
       {/* Background Glow */}
@@ -33,11 +37,19 @@ export default function CTA() {
           </p>
 
           <div className="mt-12 flex flex-wrap justify-center gap-5">
-            <button className="rounded-xl bg-[#32E6A4] px-8 py-4 font-semibold text-black transition hover:scale-105">
+            <button onClick={() => navigate("/register")} className="rounded-xl bg-[#32E6A4] px-8 py-4 font-semibold text-black transition hover:scale-105"
+>
               Get Started Free
             </button>
 
-            <button className="flex items-center gap-2 rounded-xl border border-white/20 px-8 py-4 text-white transition hover:border-[#32E6A4] hover:text-[#32E6A4]">
+            <button onClick={() => 
+            toast("🎬 Demo Coming Soon", {
+              description:
+              "We're preparing a complete walkthrough of LOOP AI.",
+            })
+          }
+          className="flex items-center gap-2 rounded-xl border border-white/20 px-8 py-4 text-white transition hover:border-[#32E6A4] hover:text-[#32E6A4]"
+>
               Book Demo
               <ArrowRight size={18} />
             </button>

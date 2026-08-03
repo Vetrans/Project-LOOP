@@ -116,12 +116,18 @@ export default function LoginForm() {
             Remember me
           </label>
 
-          <Link
-            to=""
-            className="text-sm text-cyan-400 hover:text-cyan-300"
-          >
+          <button
+          type="button"
+          onClick={() =>
+            toast.info("Forgot Password", {
+              description:
+              "Password recovery will be available in a future update.",
+            })
+           }
+           className="text-sm text-cyan-400 transition hover:text-cyan-300"
+           >
             Forgot Password?
-          </Link>
+            </button>
 
         </div>
 

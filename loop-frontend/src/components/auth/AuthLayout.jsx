@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import AuthIllustration from "./AuthIllustration";
+import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function AuthLayout({ children }) {
   return (
@@ -15,8 +17,16 @@ export default function AuthLayout({ children }) {
         >
 
           {/* Left */}
-          <div className="flex items-center justify-center p-10">
-            {children}
+          <div className="flex flex-col p-10">
+
+           <Link
+           to="/"
+           className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:border-[#32E6A4] hover:text-[#32E6A4]"
+           >
+           <ArrowLeft size={16} />
+           Return to LOOP AI
+           </Link>
+           {children}
           </div>
 
           {/* Right */}

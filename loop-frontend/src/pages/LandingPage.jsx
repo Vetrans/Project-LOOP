@@ -50,7 +50,9 @@ export default function LandingPage() {
 
         <ActiveView />
 
-        <Footer />
+        <Footer
+  onNavigate={setActiveSection}
+/>
       </main>
     </div>
   );

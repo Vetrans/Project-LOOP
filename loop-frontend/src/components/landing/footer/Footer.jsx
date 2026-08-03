@@ -23,7 +23,7 @@ const resources = [
   "Terms of Service",
 ];
 
-export default function Footer() {
+export default function Footer({ onNavigate }) {
   return (
     <footer className="border-t border-white/10 bg-[#050B0B]">
       <div className="mx-auto max-w-7xl px-6 py-20">
@@ -84,16 +84,19 @@ export default function Footer() {
           <FooterColumn
             title="Product"
             links={product}
+            onNavigate={onNavigate}
           />
 
           <FooterColumn
             title="Company"
             links={company}
+            onNavigate={onNavigate}
           />
 
           <FooterColumn
             title="Resources"
             links={resources}
+            onNavigate={onNavigate}
           />
 
         </div>

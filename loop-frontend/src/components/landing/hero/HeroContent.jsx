@@ -2,8 +2,11 @@ import { ArrowRight, PlayCircle, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import Button from "../../common/Button";
 import Badge from "../../common/Badge";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function HeroContent() {
+  const navigate = useNavigate();
   return (
     <div className="max-w-2xl">
 
@@ -42,7 +45,10 @@ export default function HeroContent() {
         transition={{ delay: .35 }}
         className="mt-10 flex flex-wrap gap-4"
       >
-        <Button size="lg">
+        <Button
+  size="lg"
+  onClick={() => navigate("/register")}
+>
           Start Free
 
           <ArrowRight
@@ -52,9 +58,12 @@ export default function HeroContent() {
         </Button>
 
         <Button
-          size="lg"
-          variant="secondary"
-        >
+  size="lg"
+  variant="secondary"
+  onClick={() =>
+  toast.info("🎬 Demo video will be available soon.")
+}
+>
           <PlayCircle
             size={18}
             className="mr-2 inline"

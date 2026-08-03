@@ -8,6 +8,7 @@ export default function Navbar({ activeSection, onNavigate }) {
   const [scrolled, setScrolled] = useState(false);
 
   const links = [
+    { name: "Home", key: "home" },
     { name: "Features", key: "features" },
     { name: "Workflow", key: "workflow" },
     { name: "Pricing", key: "pricing" },
@@ -84,7 +85,7 @@ export default function Navbar({ activeSection, onNavigate }) {
             </Link>
 
             <Link
-              to="/login"
+              to="/register"
               className="rounded-full bg-[#32E6A4] px-6 py-2 font-semibold text-black transition hover:scale-105"
             >
               Get Started
@@ -119,7 +120,7 @@ export default function Navbar({ activeSection, onNavigate }) {
                 </button>
               ))}
 
-              <Link to="/login">
+              <Link to="/register">
                 <Button>Get Started</Button>
               </Link>
             </div>
