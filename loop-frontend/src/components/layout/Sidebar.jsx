@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -25,6 +26,7 @@ const links = [
 ];
 
 export default function Sidebar() {
+  const { user } = useAuth();
   return (
     <aside className="sticky top-0 h-screen w-64 border-r border-white/10 bg-[#0E1515] px-5 py-6">
       <div className="mb-10 flex items-center gap-3">
@@ -38,7 +40,19 @@ export default function Sidebar() {
       </div>
 
       <nav className="space-y-2">
-        {links.map(({ name, icon: Icon, path }) => (
+        {links
+  .filter((link) => {
+    if (user?.role === "VIEWER" && link.path === "/ask-loop") {
+      return false;
+    }
+
+    if (user?.role !== "ADMIN" && link.path === "/members") {
+      return false;
+    }
+
+    return true;
+  })
+  .map(({ name, icon: Icon, path }) => (
           <NavLink
             key={path}
             to={path}

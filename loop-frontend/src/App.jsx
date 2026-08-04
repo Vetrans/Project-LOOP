@@ -70,7 +70,7 @@ function App() {
         <Route path="/trends" element={<ProtectedRoute><Trends /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute><ReportDetail /></ProtectedRoute>} />
-        <Route path="/ask-loop" element={<ProtectedRoute><AskLoop /></ProtectedRoute>} />
+        <Route path="/ask-loop" element={<ProtectedRoute allowedRoles={["ADMIN", "ANALYST"]}><AskLoop /></ProtectedRoute>} />
         <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
         <Route
           path="/members"
