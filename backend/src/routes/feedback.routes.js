@@ -149,7 +149,22 @@ router.get(
     } = req.query;
 
     const filter = { workspaceId: req.user.workspaceId };
-    if (search) filter.$text = { $search: search };
+    if (search) {
+  filter.$or = [
+    {
+      content: {
+        $regex: search,
+        $options: "i",
+      },
+    },
+    {
+      customerLabel: {
+        $regex: search,
+        $options: "i",
+      },
+    },
+  ];
+}
     if (channel) filter.channel = channel;
     if (sentiment) filter.sentiment = sentiment;
     if (status) filter.status = status;
