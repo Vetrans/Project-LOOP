@@ -1,5 +1,6 @@
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/layout/Navbar";
 
 import Hero from "../components/landing/hero/Hero";
@@ -36,9 +37,19 @@ const SECTIONS = {
 };
 
 export default function LandingPage() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("home");
 
+  useEffect(() => {
+  if (!loading && user) {
+    navigate("/dashboard", { replace: true });
+  }
+}, [user, loading, navigate]);
+
   const ActiveView = SECTIONS[activeSection] || HomeView;
+
+  
 
   return (
     <div>
