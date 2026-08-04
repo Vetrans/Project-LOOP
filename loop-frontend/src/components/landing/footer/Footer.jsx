@@ -41,44 +41,7 @@ export default function Footer({ onNavigate }) {
               businesses transform customer voices into smarter business
               decisions.
             </p>
-
-            <div className="mt-8 flex gap-4">
-
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl border border-white/10 p-3 text-white transition-all duration-300 hover:border-[#32E6A4] hover:bg-[#32E6A4]/10 hover:text-[#32E6A4]"
-              >
-                <FaGithub size={20} />
-              </a>
-
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl border border-white/10 p-3 text-white transition-all duration-300 hover:border-[#32E6A4] hover:bg-[#32E6A4]/10 hover:text-[#32E6A4]"
-              >
-                <FaLinkedin size={20} />
-              </a>
-
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl border border-white/10 p-3 text-white transition-all duration-300 hover:border-[#32E6A4] hover:bg-[#32E6A4]/10 hover:text-[#32E6A4]"
-              >
-                <FaXTwitter size={20} />
-              </a>
-
-              <a
-                href="mailto:contact@loopai.com"
-                className="rounded-xl border border-white/10 p-3 text-white transition-all duration-300 hover:border-[#32E6A4] hover:bg-[#32E6A4]/10 hover:text-[#32E6A4]"
-              >
-                <Mail size={20} />
-              </a>
-
-            </div>
+            
           </div>
 
           <FooterColumn
