@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler, AppError } from "../utils/AppError.js";
+import { requireRole } from "../middleware/roles.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -17,6 +18,7 @@ const askSchema = z.object({
 // in Node, before the question ever leaves this process.
 router.post(
   "/ask",
+  requireRole("ADMIN", "ANALYST"),
   asyncHandler(async (req, res) => {
     const { question } = askSchema.parse(req.body);
     const base = process.env.AI_SERVICE_URL || "http://localhost:8000";
