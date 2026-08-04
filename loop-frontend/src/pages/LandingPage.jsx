@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/layout/Navbar";
 
@@ -38,14 +38,16 @@ const SECTIONS = {
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState("home");
+  if (loading) {
+  return (
+    <div className="min-h-screen bg-[#060F0E]" />
+  );
+}
 
-  useEffect(() => {
-  if (!loading && user) {
-    navigate("/dashboard", { replace: true });
-  }
-}, [user, loading, navigate]);
+if (user) {
+  return <Navigate to="/dashboard" replace />;
+}
+  const [activeSection, setActiveSection] = useState("home");
 
   const ActiveView = SECTIONS[activeSection] || HomeView;
 

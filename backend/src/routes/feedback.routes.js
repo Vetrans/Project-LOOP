@@ -236,14 +236,14 @@ router.post(
     for (const [i, row] of rows.entries()) {
       try {
         const parsedRow = createSchema
-          .extend({ channel: z.string() }) // validate loosely, then normalize below
-          .parse({
-            content: row.content,
-            channel: CHANNELS.includes(row.channel)
-              ? row.channel
-              : "Community post",
-            customerLabel: row.customer_label || "",
-          });
+  .extend({ channel: z.string() })
+  .parse({
+    content: row.content || row.Feedback,
+    channel: CHANNELS.includes(row.channel)
+      ? row.channel
+      : "Community post",
+    customerLabel: row.Customer?.trim() || row.customer_label?.trim() || "",
+  });
 
         let doc = await Feedback.create({
           ...parsedRow,
